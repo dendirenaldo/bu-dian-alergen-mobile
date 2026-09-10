@@ -1,52 +1,58 @@
-# Flutter/Dart
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.buildlog/
+.history
+.svn/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code related
+.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
 .dart_tool/
-.packages
-build/
 .flutter-plugins
 .flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+/build/
+pubspec.lock
 
-# Android
-android/.gradle/
-android/app/debug/
-android/app/profile/
-android/app/release/
-android/local.properties
-android/key.properties
-*.jks
-*.keystore
+# Symbolication related
+app.*.symbols
 
-# iOS
-ios/Pods/
-ios/.symlinks/
-ios/Flutter/Flutter.framework
-ios/Flutter/Flutter.podspec
-ios/Runner.xcworkspace/xcshareddata/
-ios/Flutter/App.framework
-ios/Flutter/Generated.xcconfig
-ios/Flutter/app.flutterengine.sock
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Platform-specific
+/android/
+/ios/
+/linux/
+/macos/
+/web/
+/windows/
 
 # Environment
 .env
 .env.local
 
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
 # OS
-.DS_Store
 Thumbs.db
-
-# pubspec.lock (for apps, not packages)
-pubspec.lock
-
-# Coverage
-coverage/
-
-# Misc
-*.apk
-*.aab
-*.ipa
-*.app
