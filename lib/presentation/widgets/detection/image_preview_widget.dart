@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ImagePreviewWidget extends StatelessWidget {
   final File image;
@@ -29,19 +30,26 @@ class ImagePreviewWidget extends StatelessWidget {
         Positioned(
           top: 8,
           right: 8,
-          child: GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.5),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.close,
-                color: Colors.white,
-                size: 18,
+          child: Semantics(
+            label: 'Hapus gambar',
+            button: true,
+            child: GestureDetector(
+              onTap: () {
+                HapticFeedback.lightImpact();
+                onRemove();
+              },
+              child: Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.5),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.close,
+                  color: Colors.white,
+                  size: 18,
+                ),
               ),
             ),
           ),

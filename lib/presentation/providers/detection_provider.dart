@@ -3,10 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/detection_entity.dart';
 import '../../data/repositories/detection_repository_impl.dart';
+import '../../services/connectivity_service.dart';
 
 class DetectionProvider extends ChangeNotifier {
   final DetectionRepositoryImpl _repository = DetectionRepositoryImpl();
   final ImagePicker _picker = ImagePicker();
+  final ConnectivityService _connectivityService = ConnectivityService();
 
   File? _selectedImage;
   DetectionEntity? _result;
@@ -40,6 +42,13 @@ class DetectionProvider extends ChangeNotifier {
 
   Future<void> detectAllergens() async {
     if (_selectedImage == null) return;
+
+    final hasConnection = await _connectivityService.checkConnection();
+    if (!hasConnection) {
+      _error = 'Tidak ada koneksi internet. Silakan coba lagi.';
+      notifyListeners();
+      return;
+    }
 
     _isProcessing = true;
     _error = null;

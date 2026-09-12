@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/routes.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
-import '../auth/login_page.dart';
-import '../main/main_shell_page.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -26,19 +25,16 @@ class _SplashPageState extends State<SplashPage> {
 
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('auth_token');
+    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
     if (!mounted) return;
 
     if (token != null && token.isNotEmpty) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const MainShellPage()),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else if (!onboardingComplete) {
+      Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
     } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.login);
     }
   }
 
@@ -50,15 +46,15 @@ class _SplashPageState extends State<SplashPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
+            const Icon(
               LucideIcons.shieldCheck,
               size: 80,
               color: Colors.white,
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               AppStrings.appName,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
                 color: Colors.white,

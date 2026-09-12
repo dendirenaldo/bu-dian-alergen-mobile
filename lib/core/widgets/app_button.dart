@@ -26,44 +26,56 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isOutlined) {
-      return OutlinedButton(
-        onPressed: isLoading ? null : onPressed,
-        style: OutlinedButton.styleFrom(
-          minimumSize: Size(width ?? double.infinity, height ?? 48),
-          side: const BorderSide(color: AppColors.primary),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+      return Semantics(
+        button: true,
+        enabled: !isLoading && onPressed != null,
+        child: OutlinedButton(
+          onPressed: isLoading ? null : onPressed,
+          style: OutlinedButton.styleFrom(
+            minimumSize: Size(width ?? double.infinity, height ?? 48),
+            side: const BorderSide(color: AppColors.primary),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
           ),
+          child: _buildChild(),
         ),
-        child: _buildChild(),
       );
     }
 
     if (isSecondary) {
-      return TextButton(
+      return Semantics(
+        button: true,
+        enabled: !isLoading && onPressed != null,
+        child: TextButton(
+          onPressed: isLoading ? null : onPressed,
+          style: TextButton.styleFrom(
+            minimumSize: Size(width ?? double.infinity, height ?? 48),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          child: _buildChild(),
+        ),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      enabled: !isLoading && onPressed != null,
+      child: ElevatedButton(
         onPressed: isLoading ? null : onPressed,
-        style: TextButton.styleFrom(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
           minimumSize: Size(width ?? double.infinity, height ?? 48),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+          disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
         ),
         child: _buildChild(),
-      );
-    }
-
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        minimumSize: Size(width ?? double.infinity, height ?? 48),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        disabledBackgroundColor: AppColors.primary.withValues(alpha: 0.6),
       ),
-      child: _buildChild(),
     );
   }
 

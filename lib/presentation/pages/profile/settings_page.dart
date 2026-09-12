@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/theme_provider.dart';
@@ -37,7 +38,10 @@ class SettingsPage extends StatelessWidget {
                   title: 'Mode Gelap',
                   trailing: Switch(
                     value: themeProvider.isDark,
-                    onChanged: (_) => themeProvider.toggleTheme(),
+                    onChanged: (_) {
+                      HapticFeedback.mediumImpact();
+                      themeProvider.toggleTheme();
+                    },
                     activeThumbColor: Theme.of(context).colorScheme.primary,
                   ),
                 );
@@ -103,16 +107,16 @@ class SettingsPage extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            SettingsTile(
+            const SettingsTile(
               icon: LucideIcons.info,
               title: 'Versi Aplikasi',
               subtitle: '1.0.0',
             ),
-            SettingsTile(
+            const SettingsTile(
               icon: LucideIcons.fileText,
               title: 'Ketentuan Layanan',
             ),
-            SettingsTile(
+            const SettingsTile(
               icon: LucideIcons.shield,
               title: 'Kebijakan Privasi',
             ),

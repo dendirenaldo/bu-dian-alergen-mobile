@@ -14,8 +14,12 @@ class ProcessingIndicator extends StatelessWidget {
       ),
       child: Column(
         children: [
-          CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
+          Semantics(
+            label: 'Sedang memproses',
+            liveRegion: true,
+            child: CircularProgressIndicator(
+              color: Theme.of(context).colorScheme.primary,
+            ),
           ),
           const SizedBox(height: 16),
           Text(

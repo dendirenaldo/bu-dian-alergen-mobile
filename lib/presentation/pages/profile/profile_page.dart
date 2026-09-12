@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/profile/profile_header.dart';
 import '../../widgets/profile/profile_menu_item.dart';
-import '../auth/login_page.dart';
-import 'edit_profile_page.dart';
-import 'settings_page.dart';
 
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
@@ -27,18 +26,16 @@ class ProfilePage extends StatelessWidget {
               icon: LucideIcons.userCog,
               title: 'Edit Profil',
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const EditProfilePage()),
-                );
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, AppRoutes.editProfile);
               },
             ),
             ProfileMenuItem(
               icon: LucideIcons.settings,
               title: 'Pengaturan',
               onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsPage()),
-                );
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, AppRoutes.settings);
               },
             ),
             ProfileMenuItem(
@@ -46,6 +43,7 @@ class ProfilePage extends StatelessWidget {
               title: 'Keluar',
               color: Theme.of(context).colorScheme.error,
               onTap: () {
+                HapticFeedback.lightImpact();
                 showDialog(
                   context: context,
                   builder: (context) => AlertDialog(
@@ -61,9 +59,9 @@ class ProfilePage extends StatelessWidget {
                           Navigator.of(context).pop();
                           await context.read<AuthProvider>().logout();
                           if (context.mounted) {
-                            Navigator.of(context).pushAndRemoveUntil(
-                              MaterialPageRoute(
-                                  builder: (_) => const LoginPage()),
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutes.login,
                               (route) => false,
                             );
                           }

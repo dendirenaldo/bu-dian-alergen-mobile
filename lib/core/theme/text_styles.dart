@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 class TextStyles {
+  static double scale(BuildContext context, double fontSize) {
+    return MediaQuery.textScalerOf(context).scale(fontSize);
+  }
+
   // Light theme text styles
   static const TextStyle headlineLarge = TextStyle(
     fontSize: 32,

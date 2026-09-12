@@ -40,22 +40,25 @@ class DetectionPage extends StatelessWidget {
                   if (provider.isProcessing)
                     const ProcessingIndicator()
                   else
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: () async {
-                          await provider.detectAllergens();
-                          if (context.mounted && provider.result != null) {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const DetectionResultPage(),
-                              ),
-                            );
-                          }
-                        },
-                        icon: const Icon(LucideIcons.search),
-                        label: const Text('Deteksi Alergen'),
+                    Semantics(
+                      button: true,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await provider.detectAllergens();
+                            if (context.mounted && provider.result != null) {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const DetectionResultPage(),
+                                ),
+                              );
+                            }
+                          },
+                          icon: const Icon(LucideIcons.search),
+                          label: const Text('Deteksi Alergen'),
+                        ),
                       ),
                     ),
                 ] else
@@ -98,54 +101,59 @@ class DetectionPage extends StatelessWidget {
   }
 
   Widget _buildUploadArea(BuildContext context, DetectionProvider provider) {
-    return GestureDetector(
-      onTap: () => _showImagePickerSheet(context, provider),
-      child: Container(
-        width: double.infinity,
-        height: 240,
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-            width: 2,
-            style: BorderStyle.solid,
+    return Semantics(
+      label: 'Area upload gambar',
+      hint: 'Ketuk dua kali untuk memilih gambar dari kamera atau galeri',
+      button: true,
+      child: GestureDetector(
+        onTap: () => _showImagePickerSheet(context, provider),
+        child: Container(
+          width: double.infinity,
+          height: 240,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+              width: 2,
+              style: BorderStyle.solid,
+            ),
           ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  LucideIcons.camera,
+                  size: 32,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
               ),
-              child: Icon(
-                LucideIcons.camera,
-                size: 32,
-                color: Theme.of(context).colorScheme.primary,
+              const SizedBox(height: 16),
+              Text(
+                'Ketuk untuk unggah gambar',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).colorScheme.onSurface,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Ketuk untuk unggah gambar',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
+              const SizedBox(height: 4),
+              Text(
+                'Kamera atau Galeri',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Kamera atau Galeri',
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

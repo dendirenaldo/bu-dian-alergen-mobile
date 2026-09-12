@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth/login_form.dart';
-import '../main/main_shell_page.dart';
-import 'register_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,7 +15,6 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -37,9 +35,7 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (auth.isAuthenticated) {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const MainShellPage()),
-      );
+      Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (auth.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -88,29 +84,29 @@ class _LoginPageState extends State<LoginPage> {
                 LoginForm(
                   emailController: _emailController,
                   passwordController: _passwordController,
-                  obscurePassword: _obscurePassword,
-                  onTogglePassword: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
                 ),
                 const SizedBox(height: 24),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _handleLogin,
-                        child: auth.isLoading
-                            ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.surface,
-                                ),
-                              )
-                            : const Text('Masuk'),
+                    return Semantics(
+                      button: true,
+                      enabled: !auth.isLoading,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: auth.isLoading ? null : _handleLogin,
+                          child: auth.isLoading
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context).colorScheme.surface,
+                                  ),
+                                )
+                              : const Text('Masuk'),
+                        ),
                       ),
                     );
                   },
@@ -119,9 +115,7 @@ class _LoginPageState extends State<LoginPage> {
                 Center(
                   child: TextButton(
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const RegisterPage()),
-                      );
+                      Navigator.pushNamed(context, AppRoutes.register);
                     },
                     child: Text.rich(
                       TextSpan(

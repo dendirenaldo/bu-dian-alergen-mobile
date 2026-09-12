@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../auth/login_page.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -41,16 +43,24 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _nextPage() {
+    HapticFeedback.lightImpact();
     if (_currentPage < _steps.length - 1) {
       _controller.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
     } else {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const LoginPage()),
-      );
+      _completeOnboarding();
     }
+  }
+
+  Future<void> _completeOnboarding() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const LoginPage()),
+    );
   }
 
   @override
@@ -120,29 +130,35 @@ class _OnboardingPageState extends State<OnboardingPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(
                       _steps.length,
-                      (index) => Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 24 : 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? Theme.of(context).colorScheme.primary
-                              : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                          borderRadius: BorderRadius.circular(4),
+                      (index) => Semantics(
+                        label: 'Langkah ${index + 1} dari ${_steps.length}',
+                        child: Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: _currentPage == index ? 24 : 8,
+                          height: 8,
+                          decoration: BoxDecoration(
+                            color: _currentPage == index
+                                ? Theme.of(context).colorScheme.primary
+                                : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
                         ),
                       ),
                     ),
                   ),
                   const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _nextPage,
-                      child: Text(
-                        _currentPage == _steps.length - 1
-                            ? 'Mulai'
-                            : 'Selanjutnya',
+                  Semantics(
+                    button: true,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _nextPage,
+                        child: Text(
+                          _currentPage == _steps.length - 1
+                              ? 'Mulai'
+                              : 'Selanjutnya',
+                        ),
                       ),
                     ),
                   ),

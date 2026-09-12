@@ -114,30 +114,38 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
 
   Widget _buildSortChip(String label, String value) {
     final isSelected = _sortBy == value;
-    return ChoiceChip(
-      label: Text(label),
+    return Semantics(
+      label: 'Urutkan: $label',
       selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _sortBy = selected ? value : null);
-      },
-      selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-      labelStyle: TextStyle(
-        color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() => _sortBy = selected ? value : null);
+        },
+        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        labelStyle: TextStyle(
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
       ),
     );
   }
 
   Widget _buildOrderChip(String label, String value) {
     final isSelected = _sortOrder == value;
-    return ChoiceChip(
-      label: Text(label),
+    return Semantics(
+      label: 'Urutan: $label',
       selected: isSelected,
-      onSelected: (selected) {
-        setState(() => _sortOrder = selected ? value : null);
-      },
-      selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-      labelStyle: TextStyle(
-        color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          setState(() => _sortOrder = selected ? value : null);
+        },
+        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        labelStyle: TextStyle(
+          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+        ),
       ),
     );
   }

@@ -1,11 +1,22 @@
 import 'package:flutter/material.dart';
 import '../presentation/pages/splash/splash_page.dart';
+import '../presentation/pages/onboarding/onboarding_page.dart';
+import '../presentation/pages/auth/login_page.dart';
+import '../presentation/pages/auth/register_page.dart';
+import '../presentation/pages/main/main_shell_page.dart';
+import '../presentation/pages/detection/detection_page.dart';
+import '../presentation/pages/detection/detection_result_page.dart';
+import '../presentation/pages/history/history_page.dart';
+import '../presentation/pages/profile/profile_page.dart';
+import '../presentation/pages/profile/edit_profile_page.dart';
+import '../presentation/pages/profile/settings_page.dart';
 
 class AppRoutes {
   static const String splash = '/';
+  static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
-  static const String home = '/home';
+  static const String main = '/main';
   static const String detect = '/detect';
   static const String detectionResult = '/detection-result';
   static const String history = '/history';
@@ -14,10 +25,17 @@ class AppRoutes {
   static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
 
-  static Map<String, WidgetBuilder> get routes {
-    return {
-      splash: (context) => const SplashPage(),
-      // TODO: Add other routes as pages are implemented
-    };
-  }
+  static Map<String, WidgetBuilder> get routes => {
+        splash: (context) => const SplashPage(),
+        onboarding: (context) => const OnboardingPage(),
+        login: (context) => const LoginPage(),
+        register: (context) => const RegisterPage(),
+        main: (context) => const MainShellPage(),
+        detect: (context) => const DetectionPage(),
+        history: (context) => const HistoryPage(),
+        profile: (context) => const ProfilePage(),
+        editProfile: (context) => const EditProfilePage(),
+        settings: (context) => const SettingsPage(),
+        detectionResult: (context) => const DetectionResultPage(),
+      };
 }

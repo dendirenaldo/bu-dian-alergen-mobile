@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/history_provider.dart';
@@ -48,6 +49,7 @@ class _HistoryPageState extends State<HistoryPage> {
           IconButton(
             icon: const Icon(LucideIcons.listFilter),
             onPressed: () {
+              HapticFeedback.lightImpact();
               showModalBottomSheet(
                 context: context,
                 isScrollControlled: true,
@@ -67,6 +69,7 @@ class _HistoryPageState extends State<HistoryPage> {
             child: TextField(
               controller: _searchController,
               decoration: InputDecoration(
+                labelText: 'Cari deteksi',
                 hintText: 'Cari deteksi...',
                 prefixIcon: const Icon(LucideIcons.search),
                 suffixIcon: _searchController.text.isNotEmpty

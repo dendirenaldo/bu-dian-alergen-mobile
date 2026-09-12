@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth/register_form.dart';
-import '../main/main_shell_page.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -17,8 +17,6 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  bool _obscurePassword = true;
-  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
@@ -42,8 +40,9 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!mounted) return;
 
     if (auth.isAuthenticated) {
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const MainShellPage()),
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.main,
         (route) => false,
       );
     } else if (auth.error != null) {
@@ -95,34 +94,29 @@ class _RegisterPageState extends State<RegisterPage> {
                   emailController: _emailController,
                   passwordController: _passwordController,
                   confirmPasswordController: _confirmPasswordController,
-                  obscurePassword: _obscurePassword,
-                  obscureConfirmPassword: _obscureConfirmPassword,
-                  onTogglePassword: () {
-                    setState(() => _obscurePassword = !_obscurePassword);
-                  },
-                  onToggleConfirmPassword: () {
-                    setState(() =>
-                        _obscureConfirmPassword = !_obscureConfirmPassword);
-                  },
                 ),
                 const SizedBox(height: 24),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton(
-                        onPressed: auth.isLoading ? null : _handleRegister,
-                        child: auth.isLoading
-                            ? SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Theme.of(context).colorScheme.surface,
-                                ),
-                              )
-                            : const Text('Daftar'),
+                    return Semantics(
+                      button: true,
+                      enabled: !auth.isLoading,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed: auth.isLoading ? null : _handleRegister,
+                          child: auth.isLoading
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context).colorScheme.surface,
+                                  ),
+                                )
+                              : const Text('Daftar'),
+                        ),
                       ),
                     );
                   },

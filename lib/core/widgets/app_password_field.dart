@@ -59,17 +59,21 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
               color: AppColors.grey,
               size: 20,
             ),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureText ? LucideIcons.eyeOff : LucideIcons.eye,
-                color: AppColors.grey,
-                size: 20,
+            suffixIcon: Semantics(
+              label: _obscureText ? 'Tampilkan kata sandi' : 'Sembunyikan kata sandi',
+              button: true,
+              child: IconButton(
+                icon: Icon(
+                  _obscureText ? LucideIcons.eyeOff : LucideIcons.eye,
+                  color: AppColors.grey,
+                  size: 20,
+                ),
+                onPressed: () {
+                  setState(() {
+                    _obscureText = !_obscureText;
+                  });
+                },
               ),
-              onPressed: () {
-                setState(() {
-                  _obscureText = !_obscureText;
-                });
-              },
             ),
             errorText: widget.errorText,
             filled: true,

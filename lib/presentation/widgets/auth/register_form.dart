@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/app_password_field.dart';
 import '../../../core/utils/validators.dart';
 
 class RegisterForm extends StatelessWidget {
@@ -7,10 +8,6 @@ class RegisterForm extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController confirmPasswordController;
-  final bool obscurePassword;
-  final bool obscureConfirmPassword;
-  final VoidCallback onTogglePassword;
-  final VoidCallback onToggleConfirmPassword;
 
   const RegisterForm({
     super.key,
@@ -18,66 +15,56 @@ class RegisterForm extends StatelessWidget {
     required this.emailController,
     required this.passwordController,
     required this.confirmPasswordController,
-    required this.obscurePassword,
-    required this.obscureConfirmPassword,
-    required this.onTogglePassword,
-    required this.onToggleConfirmPassword,
   });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        TextFormField(
-          controller: nameController,
-          validator: (value) => Validators.minLength(value, 2, 'Nama'),
-          decoration: const InputDecoration(
-            hintText: 'Nama Lengkap',
-            prefixIcon: Icon(LucideIcons.user),
+        Semantics(
+          label: 'Nama Lengkap',
+          child: AppTextField(
+            controller: nameController,
+            label: 'Nama Lengkap',
+            hintText: 'Masukkan nama lengkap Anda',
+            prefixIcon: Icons.person_outline,
+            validator: (value) => Validators.minLength(value, 2, 'Nama'),
+            textInputAction: TextInputAction.next,
           ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          validator: Validators.email,
-          decoration: const InputDecoration(
-            hintText: 'Email',
-            prefixIcon: Icon(LucideIcons.mail),
+        Semantics(
+          label: 'Email',
+          child: AppTextField(
+            controller: emailController,
+            label: 'Email',
+            hintText: 'Masukkan email Anda',
+            prefixIcon: Icons.mail_outline,
+            keyboardType: TextInputType.emailAddress,
+            validator: Validators.email,
+            textInputAction: TextInputAction.next,
           ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: passwordController,
-          obscureText: obscurePassword,
-          validator: Validators.password,
-          decoration: InputDecoration(
-            hintText: 'Kata Sandi',
-            prefixIcon: const Icon(LucideIcons.lock),
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscurePassword ? LucideIcons.eyeOff : LucideIcons.eye,
-              ),
-              onPressed: onTogglePassword,
-            ),
+        Semantics(
+          label: 'Kata Sandi',
+          child: AppPasswordField(
+            controller: passwordController,
+            label: 'Kata Sandi',
+            hintText: 'Masukkan kata sandi',
+            validator: Validators.password,
+            textInputAction: TextInputAction.next,
           ),
         ),
         const SizedBox(height: 16),
-        TextFormField(
-          controller: confirmPasswordController,
-          obscureText: obscureConfirmPassword,
-          validator: (value) => Validators.confirmPassword(value, passwordController.text),
-          decoration: InputDecoration(
-            hintText: 'Konfirmasi Kata Sandi',
-            prefixIcon: const Icon(LucideIcons.lock),
-            suffixIcon: IconButton(
-              icon: Icon(
-                obscureConfirmPassword
-                    ? LucideIcons.eyeOff
-                    : LucideIcons.eye,
-              ),
-              onPressed: onToggleConfirmPassword,
-            ),
+        Semantics(
+          label: 'Konfirmasi Kata Sandi',
+          child: AppPasswordField(
+            controller: confirmPasswordController,
+            label: 'Konfirmasi Kata Sandi',
+            hintText: 'Masukkan ulang kata sandi',
+            validator: (value) => Validators.confirmPassword(value, passwordController.text),
+            textInputAction: TextInputAction.done,
           ),
         ),
       ],
