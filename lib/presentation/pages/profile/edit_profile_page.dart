@@ -23,6 +23,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
     _nameController = TextEditingController(text: profile.user?.name ?? '');
     _emailController = TextEditingController(text: profile.user?.email ?? '');
     _phoneController = TextEditingController(text: profile.user?.phone ?? '');
+    _nameController.addListener(_onDirty);
+    _emailController.addListener(_onDirty);
+    _phoneController.addListener(_onDirty);
+  }
+
+  bool _dirty = false;
+  void _onDirty() {
+    if (!_dirty && mounted) setState(() => _dirty = true);
   }
 
   @override
@@ -77,6 +85,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!mounted) return;
 
     if (success) {
+      setState(() => _dirty = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text('Profil berhasil diperbarui'),
@@ -96,7 +105,24 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: !_dirty,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop || !_dirty) return;
+        final leave = await showDialog<bool>(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Buang perubahan?'),
+            content: const Text('Perubahan belum disimpan. Yakin ingin keluar?'),
+            actions: [
+              TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Tetap di sini')),
+              FilledButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Ya, keluar')),
+            ],
+          ),
+        );
+        if (leave == true && context.mounted) Navigator.of(context).pop();
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: const Text('Edit Profil'),
       ),
@@ -187,6 +213,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

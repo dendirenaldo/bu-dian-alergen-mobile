@@ -44,15 +44,21 @@ class HistoryRemoteDataSource {
 
     if (response.statusCode == 200) {
       final responseJson = jsonDecode(response.body);
-      final json = responseJson['data'] as Map<String, dynamic>? ?? responseJson;
+      // Backend: { data: [...], total, page, limit, totalPages, meta? } dibungkus interceptor {data}.
+      // Tangani: body.data = List langsung, atau body.data = Map berisi data List.
+      final body = responseJson is Map<String, dynamic> ? responseJson : <String, dynamic>{'data': responseJson};
+      final inner = body['data'];
+      final Map<String, dynamic> json = inner is Map<String, dynamic> ? inner : body;
+      final rawList = (inner is List ? inner : json['data']) as List? ?? [];
+      final meta = (json['meta'] as Map<String, dynamic>?) ?? {};
       return PaginatedResponseModel<DetectionModel>(
-        data: (json['data'] as List)
-            .map((e) => DetectionModel.fromJson(e))
+        data: rawList
+            .map((e) => DetectionModel.fromJson(e as Map<String, dynamic>))
             .toList(),
-        page: json['page'],
-        limit: json['limit'],
-        total: json['total'],
-        totalPages: json['totalPages'],
+        page: (json['page'] ?? meta['page'] ?? page) as int,
+        limit: (json['limit'] ?? meta['limit'] ?? limit) as int,
+        total: (json['total'] ?? meta['total'] ?? rawList.length) as int,
+        totalPages: (json['totalPages'] ?? meta['totalPages'] ?? 1) as int,
       );
     }
     throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load history');

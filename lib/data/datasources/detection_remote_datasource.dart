@@ -6,6 +6,8 @@ import '../../config/app_config.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../models/detection_result_model.dart';
 
+import '../models/detection_model.dart';
+
 class DetectionRemoteDataSource {
   final http.Client _client;
 
@@ -35,5 +37,14 @@ class DetectionRemoteDataSource {
       return DetectionResultModel.fromJson(jsonDecode(response.body));
     }
     throw Exception(jsonDecode(response.body)['message'] ?? 'Detection failed');
+  }
+
+  Future<DetectionModel> getDetection(int id) async {
+    final uri = Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.history}/$id');
+    final response = await _client.get(uri, headers: await _headers()).timeout(AppConfig.timeout);
+    if (response.statusCode == 200) {
+      return DetectionModel.fromJson(jsonDecode(response.body));
+    }
+    throw Exception(jsonDecode(response.body)['message'] ?? 'Gagal memuat detail');
   }
 }

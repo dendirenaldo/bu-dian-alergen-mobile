@@ -23,10 +23,10 @@ class DetectionRepositoryImpl implements DetectionRepository {
   @override
   Future<Result<DetectionEntity>> getDetection(int id) async {
     try {
-      // Placeholder for get single detection
-      return Result.failure('Not implemented');
+      final model = await _dataSource.getDetection(id);
+      return Result.success(model.toEntity());
     } catch (e) {
-      return Result.failure(e.toString());
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 }

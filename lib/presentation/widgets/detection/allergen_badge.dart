@@ -76,6 +76,8 @@ class AllergenBadge extends StatelessWidget {
 
   Color _getSeverityColor(BuildContext context) {
     switch (severity.toLowerCase()) {
+      case 'critical':
+        return const Color(0xFF7F1D1D);
       case 'high':
         return Theme.of(context).colorScheme.error;
       case 'medium':

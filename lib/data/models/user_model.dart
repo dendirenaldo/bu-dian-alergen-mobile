@@ -21,14 +21,16 @@ class UserModel {
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? json;
+    final rawCreated = data['createdAt'] as String?;
     return UserModel(
       id: data['id'],
-      name: data['name'],
-      email: data['email'],
+      name: data['name'] ?? '',
+      email: data['email'] ?? '',
       phone: data['phone'],
       avatarUrl: data['avatarUrl'],
-      role: data['role'],
-      createdAt: DateTime.parse(data['createdAt']),
+      role: data['role'] ?? 'user',
+      // Login/register hanya kirim {id,name,email,role} — jangan crash.
+      createdAt: rawCreated != null ? DateTime.tryParse(rawCreated) ?? DateTime.now() : DateTime.now(),
     );
   }
 

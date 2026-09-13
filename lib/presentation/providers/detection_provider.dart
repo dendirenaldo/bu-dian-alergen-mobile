@@ -41,7 +41,8 @@ class DetectionProvider extends ChangeNotifier {
   }
 
   Future<void> detectAllergens() async {
-    if (_selectedImage == null) return;
+    // Idempotency: abaikan ketukan ganda saat masih memproses.
+    if (_selectedImage == null || _isProcessing) return;
 
     final hasConnection = await _connectivityService.checkConnection();
     if (!hasConnection) {

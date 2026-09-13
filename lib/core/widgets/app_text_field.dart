@@ -19,6 +19,7 @@ class AppTextField extends StatelessWidget {
   final int? maxLength;
   final FocusNode? focusNode;
   final TextInputAction? textInputAction;
+  final bool isRequired;
 
   const AppTextField({
     super.key,
@@ -39,6 +40,7 @@ class AppTextField extends StatelessWidget {
     this.maxLength,
     this.focusNode,
     this.textInputAction,
+    this.isRequired = false,
   });
 
   @override
@@ -46,12 +48,22 @@ class AppTextField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-            color: AppColors.textPrimary,
+        RichText(
+          text: TextSpan(
+            text: label,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: AppColors.textPrimary,
+            ),
+            children: isRequired
+                ? const [
+                    TextSpan(
+                      text: ' *',
+                      style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w700),
+                    ),
+                  ]
+                : null,
           ),
         ),
         const SizedBox(height: 8),

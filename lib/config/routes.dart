@@ -7,6 +7,7 @@ import '../presentation/pages/main/main_shell_page.dart';
 import '../presentation/pages/detection/detection_page.dart';
 import '../presentation/pages/detection/detection_result_page.dart';
 import '../presentation/pages/history/history_page.dart';
+import '../presentation/pages/history/history_detail_page.dart';
 import '../presentation/pages/profile/profile_page.dart';
 import '../presentation/pages/profile/edit_profile_page.dart';
 import '../presentation/pages/profile/settings_page.dart';
@@ -33,6 +34,11 @@ class AppRoutes {
         main: (context) => const MainShellPage(),
         detect: (context) => const DetectionPage(),
         history: (context) => const HistoryPage(),
+        historyDetail: (context) {
+          final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final id = args?['id'] as int?;
+          return HistoryDetailPage(detectionId: id ?? 0);
+        },
         profile: (context) => const ProfilePage(),
         editProfile: (context) => const EditProfilePage(),
         settings: (context) => const SettingsPage(),
