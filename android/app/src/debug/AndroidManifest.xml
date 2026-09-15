@@ -4,4 +4,7 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Dev-only: izinkan HTTP cleartext ke backend lokal (emulator).
+         Release tetap HTTPS-only (tidak ada flag ini di manifest utama). -->
+    <application android:usesCleartextTraffic="true"/>
 </manifest>

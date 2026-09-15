@@ -1,6 +1,21 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Akses jaringan: WAJIB di manifest utama. Sebelumnya hanya ada di
+         manifest debug, sehingga build release/profile total tidak bisa
+         login/deteksi/riwayat (SocketException). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Kamera untuk image_picker (ambil foto langsung). -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Galeri: Android 13+ (API 33) memakai system Photo Picker tanpa izin;
+         API <=32 butuh izin baca media. maxSdkVersion agar Play Console
+         tidak warning permission tak terpakai di API baru. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <!-- required=false agar Play Store TIDAK memfilter perangkat tanpa kamera. -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
+
     <application
-        android:label="budian_mobile"
+        android:label="Allergen Detector"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
