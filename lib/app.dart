@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'config/routes.dart';
 import 'core/theme/app_theme.dart';
 import 'presentation/providers/theme_provider.dart';
+import 'presentation/providers/app_settings_provider.dart';
 import 'presentation/pages/detection/detection_result_page.dart';
 
 class MyApp extends StatelessWidget {
@@ -12,8 +13,10 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
+        // Judul mengikuti backend (fallback "Allergen Detector").
+        final appName = context.watch<AppSettingsProvider>().appName;
         return MaterialApp(
-          title: 'Bu Dian',
+          title: appName,
           debugShowCheckedModeBanner: false,
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,

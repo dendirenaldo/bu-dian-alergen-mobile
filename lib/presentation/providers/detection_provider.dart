@@ -67,6 +67,33 @@ class DetectionProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> detectFromText(String text) async {
+    if (_isProcessing) return;
+    final query = text.trim();
+    if (query.isEmpty) {
+      _error = 'Teks komposisi tidak boleh kosong';
+      notifyListeners();
+      return;
+    }
+    final hasConnection = await _connectivityService.checkConnection();
+    if (!hasConnection) {
+      _error = 'Tidak ada koneksi internet. Silakan coba lagi.';
+      notifyListeners();
+      return;
+    }
+    _isProcessing = true;
+    _error = null;
+    notifyListeners();
+    final result = await _repository.detectFromText(query);
+    if (result.isSuccess) {
+      _result = result.data;
+    } else {
+      _error = result.error;
+    }
+    _isProcessing = false;
+    notifyListeners();
+  }
+
   void clearResult() {
     _selectedImage = null;
     _result = null;

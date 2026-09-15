@@ -100,8 +100,8 @@ class _OnboardingPageState extends State<OnboardingPage> {
                         Text(
                           step.title,
                           style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w700,
                             color: Theme.of(context).colorScheme.onSurface,
                           ),
                           textAlign: TextAlign.center,

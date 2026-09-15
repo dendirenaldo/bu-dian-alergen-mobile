@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import '../../config/app_config.dart';
 import '../constants/app_colors.dart';
 
 class AppCachedNetworkImage extends StatelessWidget {
@@ -24,10 +25,13 @@ class AppCachedNetworkImage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Backend mengembalikan path relatif (/uploads/...). Resolve ke absolut
+    // agar tidak 404 saat baseUrl production.
+    final resolved = AppConfig.resolveImageUrl(imageUrl) ?? imageUrl;
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.circular(8),
       child: CachedNetworkImage(
-        imageUrl: imageUrl,
+        imageUrl: resolved,
         width: width,
         height: height,
         fit: fit,

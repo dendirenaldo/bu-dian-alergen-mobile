@@ -21,8 +21,8 @@ class HomeHeader extends StatelessWidget {
                   Text(
                     '$greeting, $name!',
                     style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                       color: Theme.of(context).colorScheme.onSurface,
                     ),
                   ),

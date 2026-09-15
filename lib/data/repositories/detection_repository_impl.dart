@@ -21,10 +21,30 @@ class DetectionRepositoryImpl implements DetectionRepository {
   }
 
   @override
+  Future<Result<DetectionEntity>> detectFromText(String text) async {
+    try {
+      final result = await _dataSource.detectFromText(text);
+      return Result.success(result.detection.toEntity());
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
   Future<Result<DetectionEntity>> getDetection(int id) async {
     try {
       final model = await _dataSource.getDetection(id);
       return Result.success(model.toEntity());
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Result<void>> deleteDetection(int id) async {
+    try {
+      await _dataSource.deleteDetection(id);
+      return Result.success(null);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }

@@ -6,6 +6,21 @@ import '../../core/constants/api_endpoints.dart';
 import '../models/auth_response_model.dart';
 import '../models/user_model.dart';
 
+/// Helper pesan error aman: backend kirim {message}, tapi jika URL salah
+/// server balas HTML (404 nginx) sehingga jsonDecode gagal. Jangan sembunyikan URL.
+String _errMsg(http.Response r, String fallback) {
+  try {
+    final body = jsonDecode(r.body);
+    if (body is Map && body['message'] != null) {
+      return '${body['message']} (HTTP ${r.statusCode})';
+    }
+  } catch (_) {
+    final snippet = r.body.length > 120 ? '${r.body.substring(0, 120)}…' : r.body;
+    return '$fallback (HTTP ${r.statusCode} @ ${r.request?.url} :: $snippet)';
+  }
+  return '$fallback (HTTP ${r.statusCode})';
+}
+
 class AuthRemoteDataSource {
   final http.Client _client;
 
@@ -20,38 +35,48 @@ class AuthRemoteDataSource {
     final token = await _getToken();
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
 
   Future<AuthResponseModel> login(String email, String password) async {
+    final uri = Uri.parse(AppConfig.join(ApiEndpoints.login));
     final response = await _client
         .post(
-          Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.login}'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'email': email, 'password': password}),
+          uri,
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: jsonEncode({'email': email.trim(), 'password': password}),
         )
         .timeout(AppConfig.timeout);
 
-    if (response.statusCode == 200) {
+    // Backend Nest POST default 201; terima 200 & 201.
+    if (response.statusCode == 200 || response.statusCode == 201) {
       return AuthResponseModel.fromJson(jsonDecode(response.body));
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Login failed');
+    throw Exception(_errMsg(response, 'Login gagal'));
   }
 
-  Future<AuthResponseModel> register(String name, String email, String password) async {
+  Future<AuthResponseModel> register(String name, String email, String password, {String? phone}) async {
+    final uri = Uri.parse(AppConfig.join(ApiEndpoints.register));
+    final body = <String, dynamic>{
+      'name': name.trim(),
+      'email': email.trim(),
+      'password': password,
+      if (phone != null && phone.trim().isNotEmpty) 'phone': phone.trim(),
+    };
     final response = await _client
         .post(
-          Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.register}'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'name': name, 'email': email, 'password': password}),
+          uri,
+          headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
+          body: jsonEncode(body),
         )
         .timeout(AppConfig.timeout);
 
     if (response.statusCode == 200 || response.statusCode == 201) {
       return AuthResponseModel.fromJson(jsonDecode(response.body));
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Registration failed');
+    throw Exception(_errMsg(response, 'Registrasi gagal'));
   }
 
   Future<void> logout() async {
@@ -61,9 +86,10 @@ class AuthRemoteDataSource {
   }
 
   Future<UserModel> getCurrentUser() async {
+    final uri = Uri.parse(AppConfig.join(ApiEndpoints.profile));
     final response = await _client
         .get(
-          Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.profile}'),
+          uri,
           headers: await _headers(),
         )
         .timeout(AppConfig.timeout);
@@ -71,7 +97,7 @@ class AuthRemoteDataSource {
     if (response.statusCode == 200) {
       return UserModel.fromJson(jsonDecode(response.body));
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to get user');
+    throw Exception(_errMsg(response, 'Gagal memuat user'));
   }
 
   Future<void> saveToken(String token) async {

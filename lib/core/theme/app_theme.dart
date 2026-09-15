@@ -23,7 +23,7 @@ class AppTheme {
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyles.headlineMedium.copyWith(
+        titleTextStyle: TextStyles.titleLarge.copyWith(
           color: AppColors.textPrimary,
         ),
       ),
@@ -98,7 +98,7 @@ class AppTheme {
         foregroundColor: Colors.white,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyles.headlineMedium.copyWith(
+        titleTextStyle: TextStyles.darkTitleLarge.copyWith(
           color: Colors.white,
         ),
       ),

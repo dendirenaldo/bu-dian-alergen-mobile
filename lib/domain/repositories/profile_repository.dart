@@ -6,6 +6,6 @@ abstract class ProfileRepository {
   Future<Result<UserEntity>> updateProfile({
     String? name,
     String? phone,
-    String? email,
+    String? avatarUrl,
   });
 }

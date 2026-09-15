@@ -13,7 +13,6 @@ class EditProfilePage extends StatefulWidget {
 class _EditProfilePageState extends State<EditProfilePage> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _nameController;
-  late TextEditingController _emailController;
   late TextEditingController _phoneController;
 
   @override
@@ -21,10 +20,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
     super.initState();
     final profile = context.read<ProfileProvider>();
     _nameController = TextEditingController(text: profile.user?.name ?? '');
-    _emailController = TextEditingController(text: profile.user?.email ?? '');
     _phoneController = TextEditingController(text: profile.user?.phone ?? '');
     _nameController.addListener(_onDirty);
-    _emailController.addListener(_onDirty);
     _phoneController.addListener(_onDirty);
   }
 
@@ -36,7 +33,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _emailController.dispose();
     _phoneController.dispose();
     super.dispose();
   }
@@ -51,20 +47,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
     return null;
   }
 
-  String? _validateEmail(String? value) {
-    if (value == null || value.isEmpty) {
-      return 'Email wajib diisi';
-    }
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-      return 'Masukkan alamat email yang valid';
-    }
-    return null;
-  }
-
   String? _validatePhone(String? value) {
     if (value != null && value.isNotEmpty) {
-      if (!RegExp(r'^[0-9+\-\s]+$').hasMatch(value)) {
-        return 'Masukkan nomor telepon yang valid';
+      if (!RegExp(r'^(\+62|62|0)[0-9]{8,14}$').hasMatch(value.replaceAll(RegExp(r'[\s-]'), ''))) {
+        return 'Masukkan nomor telepon yang valid (cth: 08123456789)';
       }
     }
     return null;
@@ -74,9 +60,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<ProfileProvider>();
+    // Backend tidak mengizinkan ubah email → hanya kirim name/phone.
     final success = await provider.updateProfile(
       name: _nameController.text.trim(),
-      email: _emailController.text.trim(),
       phone: _phoneController.text.trim().isEmpty
           ? null
           : _phoneController.text.trim(),
@@ -105,6 +91,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final email = context.watch<ProfileProvider>().email;
     return PopScope(
       canPop: !_dirty,
       onPopInvokedWithResult: (didPop, result) async {
@@ -134,7 +121,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Nama',
+                'Nama *',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -161,11 +148,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
               ),
               const SizedBox(height: 8),
               TextFormField(
-                controller: _emailController,
-                validator: _validateEmail,
-                keyboardType: TextInputType.emailAddress,
+                initialValue: email,
+                readOnly: true,
+                enabled: false,
                 decoration: const InputDecoration(
-                  hintText: 'Masukkan email Anda',
+                  hintText: 'Email tidak dapat diubah',
                   prefixIcon: Icon(LucideIcons.mail),
                 ),
               ),
@@ -184,7 +171,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 validator: _validatePhone,
                 keyboardType: TextInputType.phone,
                 decoration: const InputDecoration(
-                  hintText: 'Masukkan nomor telepon Anda',
+                  hintText: 'cth: 08123456789',
                   prefixIcon: Icon(LucideIcons.phone),
                 ),
               ),

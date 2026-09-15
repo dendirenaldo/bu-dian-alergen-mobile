@@ -15,6 +15,7 @@ class ProfileRemoteDataSource {
     final token = prefs.getString('auth_token');
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -22,7 +23,7 @@ class ProfileRemoteDataSource {
   Future<UserModel> getProfile() async {
     final response = await _client
         .get(
-          Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.profile}'),
+          Uri.parse(AppConfig.join(ApiEndpoints.profile)),
           headers: await _headers(),
         )
         .timeout(AppConfig.timeout);
@@ -30,22 +31,29 @@ class ProfileRemoteDataSource {
     if (response.statusCode == 200) {
       return UserModel.fromJson(jsonDecode(response.body));
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to get profile');
+    String msg = 'Gagal memuat profil';
+    try {
+      final b = jsonDecode(response.body);
+      if (b is Map && b['message'] != null) msg = '${b['message']}';
+    } catch (_) {}
+    throw Exception('$msg (HTTP ${response.statusCode})');
   }
 
+  /// Backend UpdateProfileDto hanya mengizinkan name, phone, avatarUrl.
+  /// Mengirim `email` memicu 400 forbidNonWhitelisted → JANGAN kirim email.
   Future<UserModel> updateProfile({
     String? name,
     String? phone,
-    String? email,
+    String? avatarUrl,
   }) async {
     final body = <String, dynamic>{};
     if (name != null) body['name'] = name;
     if (phone != null) body['phone'] = phone;
-    if (email != null) body['email'] = email;
+    if (avatarUrl != null) body['avatarUrl'] = avatarUrl;
 
     final response = await _client
         .put(
-          Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.profile}'),
+          Uri.parse(AppConfig.join(ApiEndpoints.profile)),
           headers: await _headers(),
           body: jsonEncode(body),
         )
@@ -54,6 +62,11 @@ class ProfileRemoteDataSource {
     if (response.statusCode == 200) {
       return UserModel.fromJson(jsonDecode(response.body));
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to update profile');
+    String msg = 'Gagal memperbarui profil';
+    try {
+      final b = jsonDecode(response.body);
+      if (b is Map && b['message'] != null) msg = '${b['message']}';
+    } catch (_) {}
+    throw Exception('$msg (HTTP ${response.statusCode})');
   }
 }

@@ -162,13 +162,19 @@ class _HistoryPageState extends State<HistoryPage> {
 
                 return RefreshIndicator(
                   onRefresh: () => provider.refresh(),
-                  child: ListView.builder(
+                  child: Builder(
+                    builder: (context) {
+                      final items = provider.filteredItems;
+                      if (items.isEmpty && provider.searchQuery != null) {
+                        return const Center(child: Text('Tidak ada hasil untuk pencarian ini'));
+                      }
+                      return ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 20),
-                    itemCount: provider.items.length +
+                    itemCount: items.length +
                         (provider.isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      if (index == provider.items.length) {
+                      if (index == items.length) {
                         return const Padding(
                           padding: EdgeInsets.all(16),
                           child: Center(
@@ -177,7 +183,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         );
                       }
 
-                      final item = provider.items[index];
+                      final item = items[index];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
                         child: HistoryItemCard(
@@ -188,6 +194,8 @@ class _HistoryPageState extends State<HistoryPage> {
                           allergenCount: item.allergens?.length ?? 0,
                         ),
                       );
+                    },
+                  );
                     },
                   ),
                 );

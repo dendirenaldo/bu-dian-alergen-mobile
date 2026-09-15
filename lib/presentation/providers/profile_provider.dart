@@ -63,8 +63,8 @@ class ProfileProvider extends ChangeNotifier {
 
   Future<bool> updateProfile({
     String? name,
-    String? email,
     String? phone,
+    String? avatarUrl,
   }) async {
     _isLoading = true;
     _error = null;
@@ -74,7 +74,7 @@ class ProfileProvider extends ChangeNotifier {
       final result = await _repository.updateProfile(
         name: name,
         phone: phone,
-        email: email,
+        avatarUrl: avatarUrl,
       );
       if (result.isSuccess && result.data != null) {
         _user = UserProfile.fromEntity(result.data!);

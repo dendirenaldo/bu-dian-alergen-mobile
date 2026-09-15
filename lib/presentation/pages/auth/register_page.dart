@@ -75,8 +75,8 @@ class _RegisterPageState extends State<RegisterPage> {
                 Text(
                   'Buat Akun',
                   style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),

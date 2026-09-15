@@ -67,8 +67,8 @@ class _LoginPageState extends State<LoginPage> {
                 Text(
                   'Selamat Datang',
                   style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),

@@ -23,13 +23,13 @@ class ProfileRepositoryImpl implements ProfileRepository {
   Future<Result<UserEntity>> updateProfile({
     String? name,
     String? phone,
-    String? email,
+    String? avatarUrl,
   }) async {
     try {
       final user = await _dataSource.updateProfile(
         name: name,
         phone: phone,
-        email: email,
+        avatarUrl: avatarUrl,
       );
       return Result.success(user.toEntity());
     } catch (e) {

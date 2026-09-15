@@ -1,5 +1,5 @@
 class AppStrings {
-  static const appName = 'Bu Dian';
+  static const appName = 'Allergen Detector';
   static const appDescription = 'Sistem Deteksi Alergen Makanan';
   static const login = 'Masuk';
   static const register = 'Daftar';

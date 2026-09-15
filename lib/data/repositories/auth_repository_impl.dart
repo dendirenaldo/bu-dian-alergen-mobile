@@ -21,9 +21,9 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<Result<UserEntity>> register(String name, String email, String password) async {
+  Future<Result<UserEntity>> register(String name, String email, String password, {String? phone}) async {
     try {
-      final response = await _dataSource.register(name, email, password);
+      final response = await _dataSource.register(name, email, password, phone: phone);
       await _dataSource.saveToken(response.token);
       return Result.success(response.user.toEntity());
     } catch (e) {

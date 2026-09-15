@@ -16,6 +16,7 @@ class HistoryRemoteDataSource {
     final token = prefs.getString('auth_token');
     return {
       'Content-Type': 'application/json',
+      'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
     };
   }
@@ -27,15 +28,17 @@ class HistoryRemoteDataSource {
     String? sortBy,
     String? sortOrder,
   }) async {
+    // PENTING: backend GET /api/v1/detections HANYA menerima page & limit.
+    // Mengirim search/sortBy/sortOrder memicu 400 forbidNonWhitelisted.
+    // Search/sort dilakukan client-side di HistoryProvider.
+    final safePage = page < 1 ? 1 : page;
+    final safeLimit = limit < 1 ? 10 : (limit > 100 ? 100 : limit);
     final queryParams = {
-      'page': page.toString(),
-      'limit': limit.toString(),
-      if (search != null && search.isNotEmpty) 'search': search,
-      if (sortBy != null) 'sortBy': sortBy,
-      if (sortOrder != null) 'sortOrder': sortOrder,
+      'page': safePage.toString(),
+      'limit': safeLimit.toString(),
     };
 
-    final uri = Uri.parse('${AppConfig.baseUrl}${ApiEndpoints.history}')
+    final uri = Uri.parse(AppConfig.join(ApiEndpoints.history))
         .replace(queryParameters: queryParams);
 
     final response = await _client
@@ -55,12 +58,19 @@ class HistoryRemoteDataSource {
         data: rawList
             .map((e) => DetectionModel.fromJson(e as Map<String, dynamic>))
             .toList(),
-        page: (json['page'] ?? meta['page'] ?? page) as int,
-        limit: (json['limit'] ?? meta['limit'] ?? limit) as int,
+        page: (json['page'] ?? meta['page'] ?? safePage) as int,
+        limit: (json['limit'] ?? meta['limit'] ?? safeLimit) as int,
         total: (json['total'] ?? meta['total'] ?? rawList.length) as int,
         totalPages: (json['totalPages'] ?? meta['totalPages'] ?? 1) as int,
       );
     }
-    throw Exception(jsonDecode(response.body)['message'] ?? 'Failed to load history');
+    String msg = 'Gagal memuat riwayat';
+    try {
+      final b = jsonDecode(response.body);
+      if (b is Map && b['message'] != null) msg = '${b['message']} (HTTP ${response.statusCode})';
+    } catch (_) {
+      msg = 'Gagal memuat riwayat (HTTP ${response.statusCode} @ $uri)';
+    }
+    throw Exception(msg);
   }
 }

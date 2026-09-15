@@ -121,9 +121,21 @@ class HistoryProvider extends ChangeNotifier {
   }
 
   void setSearch(String? query) {
-    _searchQuery = query;
+    _searchQuery = (query == null || query.trim().isEmpty) ? null : query.trim();
     notifyListeners();
-    loadHistory();
+    // Backend tidak mendukung search server-side → filter client-side,
+    // tanpa request ulang agar tidak memicu 400.
+  }
+
+  /// Hasil tampil dengan filter client-side (nama hasil/metode).
+  List<HistoryItem> get filteredItems {
+    if (_searchQuery == null || _searchQuery!.isEmpty) return _items;
+    final q = _searchQuery!.toLowerCase();
+    return _items.where((e) {
+      return e.result.toLowerCase().contains(q) ||
+          e.detectionMethod.toLowerCase().contains(q) ||
+          (e.allergens?.any((a) => a.toLowerCase().contains(q)) ?? false);
+    }).toList();
   }
 
   void setSort(String? sortBy, String? sortOrder) {
