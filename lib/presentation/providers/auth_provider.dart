@@ -64,10 +64,21 @@ class AuthProvider extends ChangeNotifier {
       final result = await _repository.getCurrentUser();
       if (result.isSuccess) {
         _user = result.data;
+      } else if ((result.error ?? '').contains('401')) {
+        // Token basi: bersihkan agar seluruh lapis sepakat tamu.
+        await _repository.clearStoredToken();
+        _user = null;
       }
     }
 
     _isLoading = false;
+    notifyListeners();
+  }
+
+  /// Dipanggil saat API 401 di luar alur auth (mis. deteksi): sinkronkan state.
+  Future<void> invalidateSession() async {
+    await _repository.clearStoredToken();
+    _user = null;
     notifyListeners();
   }
 

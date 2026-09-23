@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../core/constants/api_endpoints.dart';
+import '../../core/utils/auth_token.dart';
 import '../models/detection_model.dart';
 import '../models/paginated_response_model.dart';
 
@@ -12,8 +12,7 @@ class HistoryRemoteDataSource {
   HistoryRemoteDataSource({http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> _headers() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
+    final token = await getValidToken();
     return {
       'Content-Type': 'application/json',
       'Accept': 'application/json',

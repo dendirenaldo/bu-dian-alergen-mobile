@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../core/constants/api_endpoints.dart';
 import '../../core/constants/detection_models.dart';
+import '../../core/utils/auth_token.dart';
 import '../../core/utils/image_upload_helper.dart';
 import '../models/detection_result_model.dart';
 
@@ -61,8 +62,7 @@ class DetectionRemoteDataSource {
   DetectionRemoteDataSource({http.Client? client}) : _client = client ?? http.Client();
 
   Future<Map<String, String>> _headers({bool includeAnon = false}) async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
+    final token = await getValidToken();
     final map = <String, String>{
       'Accept': 'application/json',
       if (token != null) 'Authorization': 'Bearer $token',
@@ -153,10 +153,10 @@ class DetectionRemoteDataSource {
     throw Exception(_errMsg(response, 'Deteksi teks gagal'));
   }
 
-  /// Sisa kuota tanpa login (5x per jam). Return null bila login (unlimited).
+  /// Sisa kuota tanpa login. Return null bila login (unlimited).
+  /// Throw saat gagal jaringan/server agar pemanggil pertahankan nilai lama.
   Future<Map<String, dynamic>?> fetchPublicQuota() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('auth_token') != null) return null;
+    if (await getValidToken() != null) return null;
     final uri = Uri.parse(AppConfig.join(ApiEndpoints.detectPublicQuota));
     final response = await _client
         .get(uri, headers: await _headers(includeAnon: true))
@@ -166,7 +166,7 @@ class DetectionRemoteDataSource {
       final data = (body is Map && body['data'] is Map) ? body['data'] : body;
       return (data as Map).cast<String, dynamic>();
     }
-    return null;
+    throw Exception(_errMsg(response, 'Gagal memuat kuota'));
   }
 
   Future<DetectionModel> getDetection(int id) async {

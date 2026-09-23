@@ -37,7 +37,7 @@ class ProfileProvider extends ChangeNotifier {
   UserProfile? get user => _user;
 
   String get name => _user?.name ?? 'User';
-  String get email => _user?.email ?? 'user@example.com';
+  String get email => _user?.email ?? '';
   String? get phone => _user?.phone;
   String? get avatarUrl => _user?.avatarUrl;
 

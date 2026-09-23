@@ -9,9 +9,10 @@ class ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
+        final isGuest = !auth.isAuthenticated;
         final user = auth.user;
-        final name = user?.name ?? 'User';
-        final email = user?.email ?? '';
+        final name = isGuest ? 'Tamu' : (user?.name ?? 'User');
+        final email = isGuest ? 'Masuk untuk menyimpan riwayat deteksi' : (user?.email ?? '');
 
         return Container(
           width: double.infinity,

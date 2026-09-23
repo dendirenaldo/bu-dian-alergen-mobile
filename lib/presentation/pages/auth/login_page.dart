@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/routes.dart';
+import '../../../services/storage_service.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth/login_form.dart';
 
@@ -16,6 +16,28 @@ class _LoginPageState extends State<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _isGuestNavigating = false;
+
+  Future<void> _continueAsGuest() async {
+    if (_isGuestNavigating) return;
+    setState(() => _isGuestNavigating = true);
+    try {
+      await StorageService().setOnboardingComplete();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isGuestNavigating = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan. Coba lagi.')),
+      );
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      AppRoutes.main,
+      (route) => false,
+    );
+  }
 
   @override
   void dispose() {
@@ -36,7 +58,11 @@ class _LoginPageState extends State<LoginPage> {
     if (!mounted) return;
 
     if (auth.isAuthenticated) {
-      Navigator.pushReplacementNamed(context, AppRoutes.main);
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        AppRoutes.main,
+        (route) => false,
+      );
     } else if (auth.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -137,13 +163,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 Center(
                   child: TextButton(
-                    onPressed: () async {
-                      final prefs = await SharedPreferences.getInstance();
-                      await prefs.setBool('onboarding_complete', true);
-                      if (context.mounted) {
-                        Navigator.pushReplacementNamed(context, AppRoutes.main);
-                      }
-                    },
+                    onPressed: _isGuestNavigating ? null : _continueAsGuest,
                     child: const Text('Lanjutkan tanpa akun'),
                   ),
                 ),

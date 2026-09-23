@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../config/routes.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -91,6 +93,41 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    // Tamu tidak punya profil: tawarkan masuk (route ini tanpa guard).
+    if (!context.watch<AuthProvider>().isAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Edit Profil')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text(
+                  'Masuk untuk mengubah profil',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.login,
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('Masuk / Daftar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     final email = context.watch<ProfileProvider>().email;
     return PopScope(
       canPop: !_dirty,

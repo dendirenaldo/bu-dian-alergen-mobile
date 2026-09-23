@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../config/app_config.dart';
 import '../../core/constants/api_endpoints.dart';
+import '../../core/utils/auth_token.dart';
 import '../models/auth_response_model.dart';
 import '../models/user_model.dart';
 
@@ -26,10 +27,7 @@ class AuthRemoteDataSource {
 
   AuthRemoteDataSource({http.Client? client}) : _client = client ?? http.Client();
 
-  Future<String?> _getToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString('auth_token');
-  }
+  Future<String?> _getToken() => getValidToken();
 
   Future<Map<String, String>> _headers() async {
     final token = await _getToken();
@@ -85,6 +83,12 @@ class AuthRemoteDataSource {
     await prefs.remove('auth_user');
   }
 
+  /// Hapus token basi (mis. getCurrentUser 401) agar lapis lain sepakat tamu.
+  Future<void> clearToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('auth_token');
+  }
+
   Future<UserModel> getCurrentUser() async {
     final uri = Uri.parse(AppConfig.join(ApiEndpoints.profile));
     final response = await _client
@@ -105,7 +109,5 @@ class AuthRemoteDataSource {
     await prefs.setString('auth_token', token);
   }
 
-  Future<String?> getStoredToken() async {
-    return _getToken();
-  }
+  Future<String?> getStoredToken() => getValidToken();
 }

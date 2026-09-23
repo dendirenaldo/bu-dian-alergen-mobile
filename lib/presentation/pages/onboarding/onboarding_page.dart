@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/routes.dart';
-import '../auth/login_page.dart';
+import '../../../services/storage_service.dart';
 
 class OnboardingPage extends StatefulWidget {
   const OnboardingPage({super.key});
@@ -20,7 +19,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
     _OnboardingStep(
       icon: LucideIcons.camera,
       title: 'Scan Label Makanan',
-      description: 'Ambil foto label makanan dan langsung deteksi alergen menggunakan AI-powered OCR.',
+      description: 'Ambil foto label makanan dan langsung deteksi alergen menggunakan OCR berbasis AI.',
       color: const Color(0xFF2563EB),
     ),
     _OnboardingStep(
@@ -44,6 +43,7 @@ class _OnboardingPageState extends State<OnboardingPage> {
   }
 
   void _nextPage() {
+    if (_isCompleting) return;
     HapticFeedback.lightImpact();
     if (_currentPage < _steps.length - 1) {
       _controller.nextPage(
@@ -55,20 +55,43 @@ class _OnboardingPageState extends State<OnboardingPage> {
     }
   }
 
+  bool _isCompleting = false;
+
   Future<void> _completeOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_complete', true);
+    if (_isCompleting) return;
+    _isCompleting = true;
+    try {
+      await StorageService().setOnboardingComplete();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan. Coba lagi.')),
+      );
+      _isCompleting = false;
+      return;
+    }
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginPage()),
-    );
+    Navigator.of(context).pushReplacementNamed(AppRoutes.login);
   }
 
   Future<void> _continueAsGuest() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool('onboarding_complete', true);
+    if (_isCompleting) return;
+    _isCompleting = true;
+    try {
+      await StorageService().setOnboardingComplete();
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal menyimpan. Coba lagi.')),
+      );
+      _isCompleting = false;
+      return;
+    }
     if (!mounted) return;
-    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
+    Navigator.of(context).pushNamedAndRemoveUntil(
+      AppRoutes.main,
+      (route) => false,
+    );
   }
 
   @override

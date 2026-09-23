@@ -63,4 +63,7 @@ class AuthRepositoryImpl implements AuthRepository {
       return Result.failure(e.toString());
     }
   }
+
+  @override
+  Future<void> clearStoredToken() => _dataSource.clearToken();
 }

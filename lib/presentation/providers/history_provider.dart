@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/utils/auth_token.dart';
 import '../../domain/entities/detection_entity.dart';
 import '../../data/repositories/history_repository_impl.dart';
 
@@ -55,6 +56,15 @@ class HistoryProvider extends ChangeNotifier {
   String? get searchQuery => _searchQuery;
 
   Future<void> loadHistory() async {
+    // Tamu tidak punya riwayat: jangan tembak API (401), halaman
+    // menampilkan ajakan masuk sendiri.
+    if (await getValidToken() == null) {
+      _items = [];
+      _error = null;
+      _isLoading = false;
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
     _error = null;
     _currentPage = 1;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../config/routes.dart';
+import '../../../core/utils/auth_token.dart';
 import '../../../data/repositories/detection_repository_impl.dart';
 import '../../../domain/entities/detection_entity.dart';
 import '../../widgets/detection/allergen_badge.dart';
@@ -16,6 +17,8 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
   DetectionEntity? _item;
   String? _error;
   bool _loading = true;
+  bool _isGuest = false;
+  bool _isAuthError = false;
 
   @override
   void initState() {
@@ -24,6 +27,23 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
   }
 
   Future<void> _load() async {
+    if (widget.detectionId <= 0) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _error = 'Data tidak ditemukan';
+      });
+      return;
+    }
+    // Riwayat hanya untuk akun.
+    if (await getValidToken() == null) {
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _isGuest = true;
+      });
+      return;
+    }
     final repo = DetectionRepositoryImpl();
     final result = await repo.getDetection(widget.detectionId);
     if (!mounted) return;
@@ -33,6 +53,7 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
         _item = result.data;
       } else {
         _error = result.error ?? 'Gagal memuat detail';
+        _isAuthError = (_error ?? '').contains('401');
       }
     });
   }
@@ -43,7 +64,38 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
       appBar: AppBar(title: const Text('Detail Riwayat')),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
-          : _error != null
+          : _isGuest || _isAuthError
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Masuk untuk melihat riwayat',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              AppRoutes.login,
+                              (route) => false,
+                            );
+                          },
+                          child: const Text('Masuk / Daftar'),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Kembali'),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              : _error != null
               ? Center(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,

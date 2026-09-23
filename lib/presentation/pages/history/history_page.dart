@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/routes.dart';
+import '../../../core/utils/auth_token.dart';
 import '../../providers/history_provider.dart';
 import '../../widgets/history/history_item_card.dart';
 import '../../widgets/history/filter_sort_sheet.dart';
@@ -26,13 +26,27 @@ class _HistoryPageState extends State<HistoryPage> {
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       // Riwayat hanya untuk akun; tamu tidak punya riwayat tersimpan.
-      final prefs = await SharedPreferences.getInstance();
-      if (!mounted) return;
-      if (prefs.getString('auth_token') == null) {
+      if (await getValidToken() == null) {
+        if (!mounted) return;
         setState(() => _isGuest = true);
         return;
       }
+      if (!mounted) return;
       context.read<HistoryProvider>().loadHistory();
+    });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Sinkronkan ulang bila status masuk berubah (mis. kembali dari login).
+    getValidToken().then((token) {
+      if (!mounted) return;
+      final guest = token == null;
+      if (guest != _isGuest) {
+        setState(() => _isGuest = guest);
+        if (!guest) context.read<HistoryProvider>().loadHistory();
+      }
     });
   }
 

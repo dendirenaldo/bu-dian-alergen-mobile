@@ -27,9 +27,12 @@ class _SplashPageState extends State<SplashPage> {
     // dengan delay splash agar tidak menambah waktu tunggu. checkAuth
     // menyelaraskan AuthProvider._user dengan token tersimpan agar status
     // masuk konsisten di seluruh halaman (best-effort, offline = tamu).
-    final settingsFuture = context.read<AppSettingsProvider>().load();
-    final authFuture = context
-        .read<AuthProvider>()
+    final settingsFuture = context
+        .read<AppSettingsProvider>()
+        .load()
+        .timeout(const Duration(seconds: 10), onTimeout: () {});
+    final authProvider = context.read<AuthProvider>();
+    final authFuture = authProvider
         .checkAuth()
         .timeout(const Duration(seconds: 10), onTimeout: () {});
     await Future.wait([
@@ -40,12 +43,13 @@ class _SplashPageState extends State<SplashPage> {
     if (!mounted) return;
 
     final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('auth_token');
     final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
 
     if (!mounted) return;
 
-    if (token != null && token.isNotEmpty) {
+    // Routing berdasar hasil checkAuth (single source of truth),
+    // bukan token mentah — token basi sudah dibersihkan di checkAuth.
+    if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (!onboardingComplete) {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
