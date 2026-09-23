@@ -3,15 +3,39 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/detection_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../widgets/detection/image_preview_widget.dart';
 import '../../widgets/detection/processing_indicator.dart';
 import '../detection/detection_result_page.dart';
 
-class DetectionPage extends StatelessWidget {
+class DetectionPage extends StatefulWidget {
   const DetectionPage({super.key});
 
   @override
+  State<DetectionPage> createState() => _DetectionPageState();
+}
+
+class _DetectionPageState extends State<DetectionPage> {
+  bool _isTextMode = false;
+  final _textCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<DetectionProvider>().refreshQuota();
+    });
+  }
+
+  @override
+  void dispose() {
+    _textCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final isLoggedIn = context.watch<AuthProvider>().isAuthenticated;
     return Scaffold(
       appBar: AppBar(
         title: const Text('Deteksi Alergen'),
@@ -30,8 +54,74 @@ class DetectionPage extends StatelessWidget {
                     color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-                const SizedBox(height: 24),
-                if (provider.selectedImage != null) ...[
+                if (!isLoggedIn) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    provider.quotaRemaining != null
+                        ? 'Tanpa masuk, deteksi hanya bisa ${provider.quotaLimit}x per jam (sisa ${provider.quotaRemaining}x).'
+                        : 'Tanpa masuk, deteksi hanya bisa 5x per jam.',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    const Text('Model: '),
+                    const SizedBox(width: 8),
+                    DropdownButton<String>(
+                      value: provider.selectedModel,
+                      items: const [
+                        DropdownMenuItem(value: 'bert', child: Text('BERT')),
+                        DropdownMenuItem(value: 'bilstm', child: Text('BiLSTM')),
+                        DropdownMenuItem(value: 'ensemble', child: Text('Ensemble')),
+                      ],
+                      onChanged: (v) {
+                        if (v != null) provider.setModel(v);
+                      },
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => setState(() => _isTextMode = !_isTextMode),
+                      child: Text(_isTextMode ? 'Mode Gambar' : 'Mode Teks'),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                if (_isTextMode) ...[
+                  TextField(
+                    controller: _textCtrl,
+                    maxLines: 5,
+                    maxLength: 5000,
+                    decoration: const InputDecoration(
+                      hintText: 'Masukkan teks komposisi bahan...',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton.icon(
+                      onPressed: provider.isProcessing
+                          ? null
+                          : () async {
+                              await provider.detectFromText(_textCtrl.text);
+                              if (context.mounted && provider.result != null) {
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => const DetectionResultPage(),
+                                  ),
+                                );
+                              }
+                            },
+                      icon: const Icon(LucideIcons.search),
+                      label: const Text('Deteksi Teks'),
+                    ),
+                  ),
+                ] else if (provider.selectedImage != null) ...[
                   ImagePreviewWidget(
                     image: provider.selectedImage!,
                     onRemove: () => provider.clearResult(),

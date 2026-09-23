@@ -11,9 +11,9 @@ class DetectionRepositoryImpl implements DetectionRepository {
       : _dataSource = dataSource ?? DetectionRemoteDataSource();
 
   @override
-  Future<Result<DetectionEntity>> detectAllergens(File image) async {
+  Future<Result<DetectionEntity>> detectAllergens(File image, {String? model}) async {
     try {
-      final result = await _dataSource.detectAllergens(image);
+      final result = await _dataSource.detectAllergens(image, model: model);
       return Result.success(result.detection.toEntity());
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
@@ -21,14 +21,17 @@ class DetectionRepositoryImpl implements DetectionRepository {
   }
 
   @override
-  Future<Result<DetectionEntity>> detectFromText(String text) async {
+  Future<Result<DetectionEntity>> detectFromText(String text, {String? model}) async {
     try {
-      final result = await _dataSource.detectFromText(text);
+      final result = await _dataSource.detectFromText(text, model: model);
       return Result.success(result.detection.toEntity());
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
   }
+
+  @override
+  Future<Map<String, dynamic>?> fetchPublicQuota() => _dataSource.fetchPublicQuota();
 
   @override
   Future<Result<DetectionEntity>> getDetection(int id) async {

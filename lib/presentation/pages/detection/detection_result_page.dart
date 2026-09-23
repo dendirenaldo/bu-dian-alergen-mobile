@@ -46,6 +46,8 @@ class DetectionResultPage extends StatelessWidget {
                         '${(result.confidenceScore * 100).toStringAsFixed(1)}%',
                       ),
                       _buildResultRow(context, 'Metode', result.detectionMethod),
+                      if (result.modelName != null)
+                        _buildResultRow(context, 'Model', result.modelName!.toUpperCase()),
                       if (result.processingTimeMs != null)
                         _buildResultRow(
                           context,

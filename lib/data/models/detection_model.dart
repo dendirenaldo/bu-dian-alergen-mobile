@@ -16,25 +16,27 @@ double _asDouble(dynamic v, [double fallback = 0.0]) {
 
 class DetectionModel {
   final int id;
-  final int userId;
+  final int? userId;
   final String? imageUrl;
   final String? ocrText;
   final String result;
   final double confidenceScore;
   final int? processingTimeMs;
   final String detectionMethod;
+  final String? modelName;
   final DateTime createdAt;
   final List<AllergenResultModel>? detectionAllergens;
 
   DetectionModel({
     required this.id,
-    required this.userId,
+    this.userId,
     this.imageUrl,
     this.ocrText,
     required this.result,
     required this.confidenceScore,
     this.processingTimeMs,
     required this.detectionMethod,
+    this.modelName,
     required this.createdAt,
     this.detectionAllergens,
   });
@@ -42,10 +44,23 @@ class DetectionModel {
   factory DetectionModel.fromJson(Map<String, dynamic> json) {
     final data = json['data'] as Map<String, dynamic>? ?? json;
     final rawCreated = data['createdAt'] as String?;
-    final rawList = data['detectionAllergens'] ?? data['allergens'];
+    final rawList = data['detectionAllergens'] ??
+        data['allergens'] ??
+        (data['rawModelOutput'] is Map ? (data['rawModelOutput'] as Map)['allergens'] : null);
+    final rawUid = data['userId'];
+    int? userId;
+    if (rawUid == null) {
+      userId = null;
+    } else if (rawUid is int) {
+      userId = rawUid;
+    } else if (rawUid is num) {
+      userId = rawUid.toInt();
+    } else {
+      userId = int.tryParse(rawUid.toString());
+    }
     return DetectionModel(
       id: _asInt(data['id']),
-      userId: _asInt(data['userId']),
+      userId: userId,
       imageUrl: data['imageUrl'] as String?,
       ocrText: (data['ocrText'] ?? data['ocr_text']) as String?,
       result: (data['result'] ?? 'unknown') as String,
@@ -54,6 +69,7 @@ class DetectionModel {
           ? _asInt(data['processingTimeMs'] ?? data['processing_time_ms'])
           : null,
       detectionMethod: (data['detectionMethod'] ?? data['detection_method'] ?? 'image_ocr') as String,
+      modelName: (data['modelName'] ?? data['model_name'] ?? (data['rawModelOutput'] as Map?)?['model_name']) as String?,
       createdAt: rawCreated != null ? DateTime.tryParse(rawCreated) ?? DateTime.now() : DateTime.now(),
       detectionAllergens: rawList is List
           ? rawList.map((e) => AllergenResultModel.fromJson((e as Map).cast<String, dynamic>())).toList()
@@ -70,6 +86,7 @@ class DetectionModel {
     confidenceScore: confidenceScore,
     processingTimeMs: processingTimeMs,
     detectionMethod: detectionMethod,
+    modelName: modelName,
     createdAt: createdAt,
     allergens: detectionAllergens?.map((e) => e.toEntity()).toList(),
   );

@@ -9,6 +9,9 @@ class ApiEndpoints {
 
   static const String detect = '/api/v1/detections/upload';
   static const String detectText = '/api/v1/detections/text';
+  static const String detectPublic = '/api/v1/detections/public/upload';
+  static const String detectPublicText = '/api/v1/detections/public/text';
+  static const String detectPublicQuota = '/api/v1/detections/public/quota';
   static const String history = '/api/v1/detections';
   static String historyDetail(int id) => '/api/v1/detections/$id';
 

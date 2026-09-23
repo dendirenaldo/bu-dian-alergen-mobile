@@ -13,7 +13,7 @@ class DetectionResultModel {
     final data = json['data'] as Map<String, dynamic>? ?? json;
     return DetectionResultModel(
       detection: DetectionModel.fromJson(data['detection'] ?? data),
-      message: data['message'] ?? 'Detection complete',
+      message: data['message'] ?? 'Deteksi selesai',
     );
   }
 }
