@@ -12,6 +12,45 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isGuest = !context.watch<AuthProvider>().isAuthenticated;
+    // Tamu: tawarkan masuk, sembunyikan menu akun.
+    if (isGuest) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Profil')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              const ProfileHeader(),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pushNamedAndRemoveUntil(
+                      context,
+                      AppRoutes.login,
+                      (route) => false,
+                    );
+                  },
+                  child: const Text('Masuk / Daftar'),
+                ),
+              ),
+              const SizedBox(height: 12),
+              ProfileMenuItem(
+                icon: LucideIcons.settings,
+                title: 'Pengaturan',
+                onTap: () {
+                  HapticFeedback.lightImpact();
+                  Navigator.pushNamed(context, AppRoutes.settings);
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Profil'),

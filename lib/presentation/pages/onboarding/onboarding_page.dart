@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/routes.dart';
 import '../auth/login_page.dart';
 
 class OnboardingPage extends StatefulWidget {
@@ -61,6 +62,13 @@ class _OnboardingPageState extends State<OnboardingPage> {
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(builder: (_) => const LoginPage()),
     );
+  }
+
+  Future<void> _continueAsGuest() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+    if (!mounted) return;
+    Navigator.of(context).pushReplacementNamed(AppRoutes.main);
   }
 
   @override
@@ -162,6 +170,16 @@ class _OnboardingPageState extends State<OnboardingPage> {
                       ),
                     ),
                   ),
+                  if (_currentPage == _steps.length - 1) ...[
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      width: double.infinity,
+                      child: TextButton(
+                        onPressed: _continueAsGuest,
+                        child: const Text('Lanjutkan tanpa akun'),
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),

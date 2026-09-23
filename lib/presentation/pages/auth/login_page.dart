@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../config/routes.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/auth/login_form.dart';
@@ -131,6 +132,27 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ],
                       ),
+                    ),
+                  ),
+                ),
+                Center(
+                  child: TextButton(
+                    onPressed: () async {
+                      final prefs = await SharedPreferences.getInstance();
+                      await prefs.setBool('onboarding_complete', true);
+                      if (context.mounted) {
+                        Navigator.pushReplacementNamed(context, AppRoutes.main);
+                      }
+                    },
+                    child: const Text('Lanjutkan tanpa akun'),
+                  ),
+                ),
+                Center(
+                  child: Text(
+                    'Tanpa masuk, deteksi hanya bisa 5x per jam.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
                   ),
                 ),

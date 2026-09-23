@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../config/routes.dart';
 import '../../providers/history_provider.dart';
 import '../../widgets/history/history_item_card.dart';
 import '../../widgets/history/filter_sort_sheet.dart';
@@ -16,12 +18,20 @@ class HistoryPage extends StatefulWidget {
 class _HistoryPageState extends State<HistoryPage> {
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
+  bool _isGuest = false;
 
   @override
   void initState() {
     super.initState();
     _scrollController.addListener(_onScroll);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Riwayat hanya untuk akun; tamu tidak punya riwayat tersimpan.
+      final prefs = await SharedPreferences.getInstance();
+      if (!mounted) return;
+      if (prefs.getString('auth_token') == null) {
+        setState(() => _isGuest = true);
+        return;
+      }
       context.read<HistoryProvider>().loadHistory();
     });
   }
@@ -42,6 +52,56 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
+    // Tamu: tawarkan masuk, bukan error 401.
+    if (_isGuest) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Riwayat')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(32),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  LucideIcons.clock,
+                  size: 64,
+                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Riwayat tersimpan di akun',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Masuk untuk menyimpan dan melihat riwayat deteksi Anda.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        AppRoutes.login,
+                        (route) => false,
+                      );
+                    },
+                    child: const Text('Masuk / Daftar'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Riwayat'),

@@ -6,6 +6,7 @@ import '../../../config/routes.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../providers/app_settings_provider.dart';
+import '../../providers/auth_provider.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -23,11 +24,18 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _navigateToNext() async {
     // Muat nama aplikasi dari backend (fallback bila gagal), paralel
-    // dengan delay splash agar tidak menambah waktu tunggu.
+    // dengan delay splash agar tidak menambah waktu tunggu. checkAuth
+    // menyelaraskan AuthProvider._user dengan token tersimpan agar status
+    // masuk konsisten di seluruh halaman (best-effort, offline = tamu).
     final settingsFuture = context.read<AppSettingsProvider>().load();
+    final authFuture = context
+        .read<AuthProvider>()
+        .checkAuth()
+        .timeout(const Duration(seconds: 10), onTimeout: () {});
     await Future.wait([
       Future.delayed(const Duration(seconds: 2)),
       settingsFuture,
+      authFuture,
     ]);
     if (!mounted) return;
 
