@@ -5,7 +5,6 @@ class TextStyles {
     return MediaQuery.textScalerOf(context).scale(fontSize);
   }
 
-  // Light theme text styles
   static const TextStyle headlineLarge = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.bold,
@@ -72,7 +71,6 @@ class TextStyles {
     color: Color(0xFF94A3B8),
   );
 
-  // Dark theme text styles
   static const TextStyle darkHeadlineLarge = TextStyle(
     fontSize: 32,
     fontWeight: FontWeight.bold,
@@ -139,7 +137,6 @@ class TextStyles {
     color: Color(0xFF64748B),
   );
 
-  // Text themes for Material 3
   static TextTheme get lightTextTheme => const TextTheme(
     headlineLarge: headlineLarge,
     headlineMedium: headlineMedium,

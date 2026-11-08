@@ -1,3 +1,4 @@
+import '../../core/network/api_result.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../../domain/repositories/result.dart';
@@ -14,6 +15,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
     try {
       final user = await _dataSource.getProfile();
       return Result.success(user.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -32,6 +35,8 @@ class ProfileRepositoryImpl implements ProfileRepository {
         avatarUrl: avatarUrl,
       );
       return Result.success(user.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }

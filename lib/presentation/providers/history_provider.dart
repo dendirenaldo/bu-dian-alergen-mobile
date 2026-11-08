@@ -54,10 +54,10 @@ class HistoryProvider extends ChangeNotifier {
   bool get hasMore => _hasMore;
   bool get isLoadingMore => _isLoadingMore;
   String? get searchQuery => _searchQuery;
+  String? get sortBy => _sortBy;
+  String? get sortOrder => _sortOrder;
 
   Future<void> loadHistory() async {
-    // Tamu tidak punya riwayat: jangan tembak API (401), halaman
-    // menampilkan ajakan masuk sendiri.
     if (await getValidToken() == null) {
       _items = [];
       _error = null;
@@ -133,11 +133,8 @@ class HistoryProvider extends ChangeNotifier {
   void setSearch(String? query) {
     _searchQuery = (query == null || query.trim().isEmpty) ? null : query.trim();
     notifyListeners();
-    // Backend tidak mendukung search server-side → filter client-side,
-    // tanpa request ulang agar tidak memicu 400.
   }
 
-  /// Hasil tampil dengan filter client-side (nama hasil/metode).
   List<HistoryItem> get filteredItems {
     if (_searchQuery == null || _searchQuery!.isEmpty) return _items;
     final q = _searchQuery!.toLowerCase();

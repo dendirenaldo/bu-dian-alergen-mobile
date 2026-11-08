@@ -12,8 +12,8 @@ class ProfilePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isGuest = !context.watch<AuthProvider>().isAuthenticated;
-    // Tamu: tawarkan masuk, sembunyikan menu akun.
+    final auth = context.watch<AuthProvider>();
+    final isGuest = !auth.isAuthenticated;
     if (isGuest) {
       return Scaffold(
         appBar: AppBar(title: const Text('Profil')),
@@ -60,6 +60,40 @@ class ProfilePage extends StatelessWidget {
         child: Column(
           children: [
             const ProfileHeader(),
+            if (auth.error != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      LucideIcons.alertCircle,
+                      color: Theme.of(context).colorScheme.error,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        auth.error!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () =>
+                          context.read<AuthProvider>().checkAuth(),
+                      child: const Text('Coba lagi'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 24),
             ProfileMenuItem(
               icon: LucideIcons.userCog,
@@ -67,6 +101,14 @@ class ProfilePage extends StatelessWidget {
               onTap: () {
                 HapticFeedback.lightImpact();
                 Navigator.pushNamed(context, AppRoutes.editProfile);
+              },
+            ),
+            ProfileMenuItem(
+              icon: LucideIcons.lock,
+              title: 'Ubah Password',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, AppRoutes.changePassword);
               },
             ),
             ProfileMenuItem(

@@ -21,6 +21,4 @@ List<SingleChildWidget> get getProviders {
 }
 
 void setupDependencies() {
-  // Initialize any singleton services here
-  // Example: GetIt instance, HTTP client, etc.
 }

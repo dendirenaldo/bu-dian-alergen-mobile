@@ -106,8 +106,6 @@ class AllergenResultModel {
   });
 
   factory AllergenResultModel.fromJson(Map<String, dynamic> json) {
-    // Backend kirim relasi: { detectionId, allergenId, confidenceScore, allergen: { name, severityLevel } }.
-    // ML/flat kirim: { allergenId?, name, severityLevel?, confidence }.
     final nested = json['allergen'] as Map<String, dynamic>?;
     return AllergenResultModel(
       allergenId: _asInt(json['allergenId'] ?? nested?['id']),

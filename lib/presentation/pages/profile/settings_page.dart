@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../config/routes.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/profile/settings_tile.dart';
 
@@ -112,13 +113,21 @@ class SettingsPage extends StatelessWidget {
               title: 'Versi Aplikasi',
               subtitle: '1.0.0',
             ),
-            const SettingsTile(
+            SettingsTile(
               icon: LucideIcons.fileText,
               title: 'Ketentuan Layanan',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, AppRoutes.terms);
+              },
             ),
-            const SettingsTile(
+            SettingsTile(
               icon: LucideIcons.shield,
               title: 'Kebijakan Privasi',
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pushNamed(context, AppRoutes.privacy);
+              },
             ),
           ],
         ),

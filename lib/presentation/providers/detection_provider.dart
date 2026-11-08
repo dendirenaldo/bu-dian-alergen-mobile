@@ -62,19 +62,16 @@ class DetectionProvider extends ChangeNotifier {
         if (q['limit'] is num) _quotaLimit = (q['limit'] as num).toInt();
         notifyListeners();
       } else {
-        // Login (unlimited) atau kuota tak tersedia.
         if (_quotaRemaining != null) {
           _quotaRemaining = null;
           notifyListeners();
         }
       }
     } catch (_) {
-      // Jaringan gagal: pertahankan nilai lama, jangan null-kan.
     }
   }
 
   Future<void> detectAllergens() async {
-    // Idempotency: abaikan ketukan ganda saat masih memproses.
     if (_selectedImage == null || _isProcessing) return;
 
     final hasConnection = await _connectivityService.checkConnection();
@@ -95,7 +92,6 @@ class DetectionProvider extends ChangeNotifier {
       await refreshQuota();
     } else {
       _error = result.error;
-      // Kuota habis juga mengubah sisa — sinkronkan tampilan.
       await refreshQuota();
     }
 

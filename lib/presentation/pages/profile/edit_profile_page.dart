@@ -62,7 +62,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<ProfileProvider>();
-    // Backend tidak mengizinkan ubah email → hanya kirim name/phone.
     final success = await provider.updateProfile(
       name: _nameController.text.trim(),
       phone: _phoneController.text.trim().isEmpty
@@ -86,6 +85,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
         SnackBar(
           content: Text(provider.error ?? 'Gagal memperbarui profil'),
           backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: 'Coba lagi',
+            textColor: Theme.of(context).colorScheme.onError,
+            onPressed: _handleSave,
+          ),
         ),
       );
     }
@@ -93,7 +97,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    // Tamu tidak punya profil: tawarkan masuk (route ini tanpa guard).
     if (!context.watch<AuthProvider>().isAuthenticated) {
       return Scaffold(
         appBar: AppBar(title: const Text('Edit Profil')),
@@ -215,22 +218,70 @@ class _EditProfilePageState extends State<EditProfilePage> {
               const SizedBox(height: 32),
               Consumer<ProfileProvider>(
                 builder: (context, provider, _) {
-                  return SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: provider.isLoading ? null : _handleSave,
-                      child: provider.isLoading
-                          ? SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.surface,
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (provider.error != null) ...[
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .error
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                LucideIcons.alertCircle,
+                                color:
+                                    Theme.of(context).colorScheme.error,
+                                size: 20,
                               ),
-                            )
-                          : const Text('Simpan Perubahan'),
-                    ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  provider.error!,
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .error,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: provider.isLoading
+                                    ? null
+                                    : _handleSave,
+                                child: const Text('Coba lagi'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
+                      SizedBox(
+                        width: double.infinity,
+                        height: 52,
+                        child: ElevatedButton(
+                          onPressed:
+                              provider.isLoading ? null : _handleSave,
+                          child: provider.isLoading
+                              ? SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .surface,
+                                  ),
+                                )
+                              : const Text('Simpan Perubahan'),
+                        ),
+                      ),
+                    ],
                   );
                 },
               ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/utils/display_names.dart';
 import '../../providers/detection_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/detection/image_preview_widget.dart';
@@ -33,8 +34,27 @@ class _DetectionPageState extends State<DetectionPage> {
     super.dispose();
   }
 
+  Future<void> _retryLastAction() async {
+    final provider = context.read<DetectionProvider>();
+    if (_isTextMode) {
+      await provider.detectFromText(_textCtrl.text);
+    } else {
+      await provider.detectAllergens();
+    }
+    if (!mounted) return;
+    if (provider.result != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const DetectionResultPage(),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     final isLoggedIn = context.watch<AuthProvider>().isAuthenticated;
     return Scaffold(
       appBar: AppBar(
@@ -49,9 +69,8 @@ class _DetectionPageState extends State<DetectionPage> {
               children: [
                 Text(
                   'Unggah gambar label makanan untuk mendeteksi alergen',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+                  style: textTheme.bodyLarge?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 if (!isLoggedIn) ...[
@@ -60,23 +79,26 @@ class _DetectionPageState extends State<DetectionPage> {
                     provider.quotaRemaining != null
                         ? 'Tanpa masuk, deteksi hanya bisa ${provider.quotaLimit}x per jam (sisa ${provider.quotaRemaining}x).'
                         : 'Tanpa masuk, deteksi hanya bisa 5x per jam.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                    ),
+                    style: textTheme.bodySmall,
                   ),
                 ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    const Text('Model: '),
+                    Text('Model: ', style: textTheme.bodyMedium),
                     const SizedBox(width: 8),
                     DropdownButton<String>(
                       value: provider.selectedModel,
-                      items: const [
-                        DropdownMenuItem(value: 'bert', child: Text('BERT')),
-                        DropdownMenuItem(value: 'bilstm', child: Text('BiLSTM')),
-                        DropdownMenuItem(value: 'ensemble', child: Text('Ensemble')),
+                      items: [
+                        DropdownMenuItem(
+                            value: 'bert',
+                            child: Text(formatModelName('bert'))),
+                        DropdownMenuItem(
+                            value: 'bilstm',
+                            child: Text(formatModelName('bilstm'))),
+                        DropdownMenuItem(
+                            value: 'ensemble',
+                            child: Text(formatModelName('ensemble'))),
                       ],
                       onChanged: (v) {
                         if (v != null) provider.setModel(v);
@@ -84,8 +106,10 @@ class _DetectionPageState extends State<DetectionPage> {
                     ),
                     const Spacer(),
                     TextButton(
-                      onPressed: () => setState(() => _isTextMode = !_isTextMode),
-                      child: Text(_isTextMode ? 'Mode Gambar' : 'Mode Teks'),
+                      onPressed: () =>
+                          setState(() => _isTextMode = !_isTextMode),
+                      child:
+                          Text(_isTextMode ? 'Mode Gambar' : 'Mode Teks'),
                     ),
                   ],
                 ),
@@ -109,10 +133,12 @@ class _DetectionPageState extends State<DetectionPage> {
                           ? null
                           : () async {
                               await provider.detectFromText(_textCtrl.text);
-                              if (context.mounted && provider.result != null) {
+                              if (context.mounted &&
+                                  provider.result != null) {
                                 Navigator.of(context).push(
                                   MaterialPageRoute(
-                                    builder: (_) => const DetectionResultPage(),
+                                    builder: (_) =>
+                                        const DetectionResultPage(),
                                   ),
                                 );
                               }
@@ -138,10 +164,12 @@ class _DetectionPageState extends State<DetectionPage> {
                         child: ElevatedButton.icon(
                           onPressed: () async {
                             await provider.detectAllergens();
-                            if (context.mounted && provider.result != null) {
+                            if (context.mounted &&
+                                provider.result != null) {
                               Navigator.of(context).push(
                                 MaterialPageRoute(
-                                  builder: (_) => const DetectionResultPage(),
+                                  builder: (_) =>
+                                      const DetectionResultPage(),
                                 ),
                               );
                             }
@@ -158,24 +186,40 @@ class _DetectionPageState extends State<DetectionPage> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.error.withValues(alpha: 0.1),
+                      color: colorScheme.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Icon(
-                          LucideIcons.alertCircle,
-                          color: Theme.of(context).colorScheme.error,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            provider.error!,
-                            style: TextStyle(
-                              color: Theme.of(context).colorScheme.error,
-                              fontSize: 14,
+                        Row(
+                          children: [
+                            Icon(
+                              LucideIcons.alertCircle,
+                              color: colorScheme.error,
+                              size: 20,
                             ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                provider.error!,
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.error,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton.icon(
+                            onPressed: provider.isProcessing
+                                ? null
+                                : _retryLastAction,
+                            icon: const Icon(LucideIcons.refreshCw,
+                                size: 16),
+                            label: const Text('Coba Lagi'),
                           ),
                         ),
                       ],
@@ -191,92 +235,90 @@ class _DetectionPageState extends State<DetectionPage> {
   }
 
   Widget _buildUploadArea(BuildContext context, DetectionProvider provider) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     return Semantics(
       label: 'Area upload gambar',
       hint: 'Ketuk dua kali untuk memilih gambar dari kamera atau galeri',
       button: true,
       child: GestureDetector(
         onTap: () => _showImagePickerSheet(context, provider),
-        child: Container(
-          width: double.infinity,
-          height: 240,
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+        child: Card(
+          margin: EdgeInsets.zero,
+          color: colorScheme.primary.withValues(alpha: 0.05),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
-              width: 2,
-              style: BorderStyle.solid,
-            ),
           ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
+          child: SizedBox(
+            width: double.infinity,
+            height: 240,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    LucideIcons.camera,
+                    size: 32,
+                    color: colorScheme.primary,
+                  ),
                 ),
-                child: Icon(
-                  LucideIcons.camera,
-                  size: 32,
-                  color: Theme.of(context).colorScheme.primary,
+                const SizedBox(height: 16),
+                Text(
+                  'Ketuk untuk unggah gambar',
+                  style: textTheme.titleMedium,
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'Ketuk untuk unggah gambar',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurface,
+                const SizedBox(height: 4),
+                Text(
+                  'Kamera atau Galeri',
+                  style: textTheme.bodySmall,
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Kamera atau Galeri',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  void _showImagePickerSheet(BuildContext context, DetectionProvider provider) {
+  void _showImagePickerSheet(
+      BuildContext context, DetectionProvider provider) {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  borderRadius: BorderRadius.circular(2),
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
               Text(
                 'Pilih Sumber Gambar',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Theme.of(context).colorScheme.onSurface),
+                style: Theme.of(context).textTheme.titleLarge,
               ),
               const SizedBox(height: 16),
               ListTile(
-                leading: Icon(LucideIcons.camera, color: Theme.of(context).colorScheme.primary),
+                leading: Icon(LucideIcons.camera,
+                    color: Theme.of(context).colorScheme.primary),
                 title: const Text('Kamera'),
                 onTap: () {
                   Navigator.pop(context);
@@ -284,7 +326,8 @@ class _DetectionPageState extends State<DetectionPage> {
                 },
               ),
               ListTile(
-                leading: Icon(LucideIcons.image, color: Theme.of(context).colorScheme.secondary),
+                leading: Icon(LucideIcons.image,
+                    color: Theme.of(context).colorScheme.secondary),
                 title: const Text('Galeri'),
                 onTap: () {
                   Navigator.pop(context);

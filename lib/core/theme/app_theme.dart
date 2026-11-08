@@ -75,6 +75,29 @@ class AppTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 8,
       ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        clipBehavior: Clip.hardEdge,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.inputBackground,
+        selectedColor: AppColors.primary.withValues(alpha: 0.12),
+        secondarySelectedColor: AppColors.primary.withValues(alpha: 0.12),
+        labelStyle: TextStyles.labelLarge,
+        secondaryLabelStyle: TextStyles.labelLarge,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.border,
+        thickness: 1,
+        space: 1,
+      ),
     );
   }
 
@@ -149,6 +172,29 @@ class AppTheme {
         unselectedItemColor: AppColors.grey,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        clipBehavior: Clip.hardEdge,
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.darkSurface,
+        selectedColor: AppColors.primary.withValues(alpha: 0.24),
+        secondarySelectedColor: AppColors.primary.withValues(alpha: 0.24),
+        labelStyle: TextStyles.darkLabelLarge,
+        secondaryLabelStyle: TextStyles.darkLabelLarge,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      dividerTheme: const DividerThemeData(
+        color: AppColors.darkBorder,
+        thickness: 1,
+        space: 1,
       ),
     );
   }

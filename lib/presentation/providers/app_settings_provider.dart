@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import '../../config/app_config.dart';
 import '../../data/datasources/settings_remote_datasource.dart';
 
-/// Nama aplikasi mengikuti backend (`GET /settings/public` → `app_name`),
-/// dengan fallback [AppConfig.appName] ("Allergen Detector") bila
-/// offline/error. Dimuat sekali saat splash.
 class AppSettingsProvider extends ChangeNotifier {
   final SettingsRemoteDataSource _dataSource;
 
@@ -36,7 +33,6 @@ class AppSettingsProvider extends ChangeNotifier {
         _appName = name;
       }
     } catch (_) {
-      // offline/error → tetap fallback
     }
     _loaded = true;
     notifyListeners();

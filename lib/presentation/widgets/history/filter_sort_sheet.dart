@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/history_provider.dart';
+import '../../../core/theme/text_styles.dart';
 
 class FilterSortSheet extends StatefulWidget {
   const FilterSortSheet({super.key});
@@ -16,11 +17,14 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
   @override
   void initState() {
     super.initState();
-    // Could load current sort state from provider
+    final provider = context.read<HistoryProvider>();
+    _sortBy = provider.sortBy;
+    _sortOrder = provider.sortOrder;
   }
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -28,30 +32,32 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .outline
+                      .withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
               ),
             ),
             const SizedBox(height: 16),
             Text(
               'Urutkan & Filter',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
+              style: textTheme.titleLarge ?? TextStyles.titleLarge,
             ),
             const SizedBox(height: 16),
             Text(
               'Urutkan Berdasarkan',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              style: (textTheme.titleMedium ?? TextStyles.titleMedium).copyWith(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 8),
@@ -66,10 +72,11 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
             const SizedBox(height: 16),
             Text(
               'Urutan',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+              style: (textTheme.titleMedium ?? TextStyles.titleMedium).copyWith(
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withValues(alpha: 0.6),
               ),
             ),
             const SizedBox(height: 8),
@@ -84,24 +91,42 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
             Row(
               children: [
                 Expanded(
-                  child: OutlinedButton(
-                    onPressed: () {
-                      setState(() {
-                        _sortBy = null;
-                        _sortOrder = null;
-                      });
-                    },
-                    child: const Text('Atur Ulang'),
+                  child: SizedBox(
+                    height: 48,
+                    child: FilledButton.tonal(
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _sortBy = null;
+                          _sortOrder = null;
+                        });
+                      },
+                      child: const Text('Atur Ulang'),
+                    ),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: () {
-                      context.read<HistoryProvider>().setSort(_sortBy, _sortOrder);
-                      Navigator.of(context).pop();
-                    },
-                    child: const Text('Terapkan'),
+                  child: SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        context
+                            .read<HistoryProvider>()
+                            .setSort(_sortBy, _sortOrder);
+                        Navigator.of(context).pop();
+                      },
+                      child: const Text('Terapkan'),
+                    ),
                   ),
                 ),
               ],
@@ -123,10 +148,6 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
         onSelected: (selected) {
           setState(() => _sortBy = selected ? value : null);
         },
-        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        labelStyle: TextStyle(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
       ),
     );
   }
@@ -142,10 +163,6 @@ class _FilterSortSheetState extends State<FilterSortSheet> {
         onSelected: (selected) {
           setState(() => _sortOrder = selected ? value : null);
         },
-        selectedColor: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
-        labelStyle: TextStyle(
-          color: isSelected ? Theme.of(context).colorScheme.primary : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-        ),
       ),
     );
   }

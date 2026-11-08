@@ -50,6 +50,11 @@ class _RegisterPageState extends State<RegisterPage> {
         SnackBar(
           content: Text(auth.error!),
           backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: 'Coba lagi',
+            textColor: Theme.of(context).colorScheme.onError,
+            onPressed: _handleRegister,
+          ),
         ),
       );
     }
@@ -98,26 +103,75 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 24),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return Semantics(
-                      button: true,
-                      enabled: !auth.isLoading,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: auth.isLoading ? null : _handleRegister,
-                          child: auth.isLoading
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(context).colorScheme.surface,
+                    final err = auth.error;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (err != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .error
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color:
+                                      Theme.of(context).colorScheme.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    err,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error,
+                                    ),
                                   ),
-                                )
-                              : const Text('Daftar'),
+                                ),
+                                TextButton(
+                                  onPressed: auth.isLoading
+                                      ? null
+                                      : _handleRegister,
+                                  child: const Text('Coba lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Semantics(
+                          button: true,
+                          enabled: !auth.isLoading,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed:
+                                  auth.isLoading ? null : _handleRegister,
+                              child: auth.isLoading
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                      ),
+                                    )
+                                  : const Text('Daftar'),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     );
                   },
                 ),

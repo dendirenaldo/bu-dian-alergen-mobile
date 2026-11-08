@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../config/routes.dart';
 import '../../../core/utils/auth_token.dart';
+import '../../../core/utils/display_names.dart';
+import '../../../core/widgets/skeleton/history_detail_skeleton.dart';
 import '../../../data/repositories/detection_repository_impl.dart';
 import '../../../domain/entities/detection_entity.dart';
 import '../../widgets/detection/allergen_badge.dart';
@@ -23,7 +25,9 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
   @override
   void initState() {
     super.initState();
-    _load();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _load();
+    });
   }
 
   Future<void> _load() async {
@@ -35,8 +39,13 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
       });
       return;
     }
-    // Riwayat hanya untuk akun.
-    if (await getValidToken() == null) {
+    String? token;
+    try {
+      token = await getValidToken();
+    } catch (_) {
+      token = null;
+    }
+    if (token == null) {
       if (!mounted) return;
       setState(() {
         _loading = false;
@@ -44,6 +53,12 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
       });
       return;
     }
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+      _isAuthError = false;
+    });
     final repo = DetectionRepositoryImpl();
     final result = await repo.getDetection(widget.detectionId);
     if (!mounted) return;
@@ -53,17 +68,18 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
         _item = result.data;
       } else {
         _error = result.error ?? 'Gagal memuat detail';
-        _isAuthError = (_error ?? '').contains('401');
+        _isAuthError = result.isUnauthenticated;
       }
     });
   }
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Riwayat')),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const HistoryDetailSkeleton()
           : _isGuest || _isAuthError
               ? Center(
                   child: Padding(
@@ -71,9 +87,9 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Text(
+                        Text(
                           'Masuk untuk melihat riwayat',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                          style: textTheme.titleLarge,
                         ),
                         const SizedBox(height: 12),
                         ElevatedButton(
@@ -102,9 +118,19 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
                     children: [
                       Text(_error!),
                       const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: const Text('Kembali'),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _load,
+                            child: const Text('Coba Lagi'),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Kembali'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -114,29 +140,39 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
                   : ListView(
                       padding: const EdgeInsets.all(20),
                       children: [
-                        _row('Hasil', _item!.result == 'safe' ? 'Aman' : 'Berbahaya'),
-                        _row('Keyakinan', '${(_item!.confidenceScore * 100).toInt()}%'),
-                        _row('Metode', _item!.detectionMethod == 'image_ocr' ? 'Gambar (OCR)' : 'Teks'),
-                        _row('Tanggal', _item!.createdAt.toString()),
-                        if (_item!.ocrText != null && _item!.ocrText!.isNotEmpty) ...[
+                        _row('Hasil', formatResult(_item!.result)),
+                        _row('Keyakinan',
+                            formatConfidence(_item!.confidenceScore)),
+                        _row('Metode', formatMethod(_item!.detectionMethod)),
+                        _row('Tanggal', formatDateId(_item!.createdAt)),
+                        if (_item!.ocrText != null &&
+                            _item!.ocrText!.isNotEmpty) ...[
                           const SizedBox(height: 12),
-                          const Text('Teks OCR', style: TextStyle(fontWeight: FontWeight.w600)),
+                          Text('Teks OCR', style: textTheme.titleMedium),
                           const SizedBox(height: 6),
-                          Text(_item!.ocrText!),
+                          Text(_item!.ocrText!,
+                              style: textTheme.bodyMedium),
                         ],
                         const SizedBox(height: 12),
-                        const Text('Alergen', style: TextStyle(fontWeight: FontWeight.w600)),
+                        Text('Alergen', style: textTheme.titleMedium),
                         const SizedBox(height: 8),
-                        if (_item!.allergens == null || _item!.allergens!.isEmpty)
-                          const Text('Tidak ada alergen terdeteksi')
+                        if (_item!.allergens == null ||
+                            _item!.allergens!.isEmpty)
+                          Text('Tidak ada alergen terdeteksi',
+                              style: textTheme.bodyMedium)
                         else
                           ..._item!.allergens!.map((a) => Padding(
-                                padding: const EdgeInsets.only(bottom: 8),
-                                child: AllergenBadge(name: a.name, severity: a.severity, confidence: a.confidenceScore),
+                                padding:
+                                    const EdgeInsets.only(bottom: 8),
+                                child: AllergenBadge(
+                                    name: a.name,
+                                    severity: a.severity,
+                                    confidence: a.confidenceScore),
                               )),
                         const SizedBox(height: 20),
                         ElevatedButton(
-                          onPressed: () => Navigator.of(context).pushReplacementNamed(AppRoutes.main),
+                          onPressed: () => Navigator.of(context)
+                              .pushReplacementNamed(AppRoutes.main),
                           child: const Text('Kembali ke Beranda'),
                         ),
                       ],
@@ -145,11 +181,15 @@ class _HistoryDetailPageState extends State<HistoryDetailPage> {
   }
 
   Widget _row(String label, String value) {
+    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [Text(label), Text(value, style: const TextStyle(fontWeight: FontWeight.w600))],
+        children: [
+          Text(label, style: textTheme.bodyMedium),
+          Text(value, style: textTheme.titleMedium)
+        ],
       ),
     );
   }

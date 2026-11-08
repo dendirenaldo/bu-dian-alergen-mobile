@@ -3,19 +3,9 @@ import 'dart:io';
 import 'package:http_parser/http_parser.dart';
 import 'package:mime/mime.dart';
 
-/// Helper terpusat untuk upload gambar deteksi.
-///
-/// Latar: `http.MultipartFile.fromPath` default ke
-/// `application/octet-stream` (tidak menebak dari nama file),
-/// sehingga backend (multer `fileFilter: image/*`) menolak dengan
-/// 400 "File harus berupa gambar". Helper ini memaksa content-type
-/// eksplisit + validasi awal agar error cepat & berbahasa jelas.
 class ImageUploadHelper {
   static const int maxBytes = 5 * 1024 * 1024;
 
-  /// Ekstensi yang didukung ujung-ke-ujung (mobile → backend → cv2).
-  /// HEIC/HEIF disengaja DITOLAK: lolos cek `image/*` tapi `cv2.imdecode`
-  /// tidak bisa decode → user hanya dapat "File gambar rusak" yang membingungkan.
   static const Set<String> allowedExtensions = {
     'jpg',
     'jpeg',
@@ -32,8 +22,6 @@ class ImageUploadHelper {
     return name.substring(dot + 1).toLowerCase();
   }
 
-  /// Validasi cepat sebelum request jaringan. Throw [Exception] berbahasa
-  /// Indonesia yang siap ditampilkan ke user.
   static void validate(File image) {
     if (!image.existsSync()) {
       throw Exception('File gambar tidak ditemukan. Pilih ulang gambar.');
@@ -53,9 +41,6 @@ class ImageUploadHelper {
     }
   }
 
-  /// Tebak content-type dari nama file. Fallback `image/jpeg` (bukan
-  /// `octet-stream`) agar tidak selalu ditolak backend; keaslian bytes
-  /// tetap dipastikan server via magic-byte `cv2.imdecode`.
   static MediaType mediaTypeFor(String path) {
     final mimeStr = lookupMimeType(path) ?? '';
     if (mimeStr.startsWith('image/')) {

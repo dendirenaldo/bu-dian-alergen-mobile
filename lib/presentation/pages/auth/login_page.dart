@@ -68,6 +68,11 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(
           content: Text(auth.error!),
           backgroundColor: Theme.of(context).colorScheme.error,
+          action: SnackBarAction(
+            label: 'Coba lagi',
+            textColor: Theme.of(context).colorScheme.onError,
+            onPressed: _handleLogin,
+          ),
         ),
       );
     }
@@ -112,29 +117,87 @@ class _LoginPageState extends State<LoginPage> {
                   emailController: _emailController,
                   passwordController: _passwordController,
                 ),
-                const SizedBox(height: 24),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.pushNamed(context, AppRoutes.forgotPassword);
+                    },
+                    child: const Text('Lupa password?'),
+                  ),
+                ),
+                const SizedBox(height: 8),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
-                    return Semantics(
-                      button: true,
-                      enabled: !auth.isLoading,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: auth.isLoading ? null : _handleLogin,
-                          child: auth.isLoading
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Theme.of(context).colorScheme.surface,
+                    final err = auth.error;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        if (err != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .error
+                                  .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color:
+                                      Theme.of(context).colorScheme.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    err,
+                                    style: TextStyle(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error,
+                                    ),
                                   ),
-                                )
-                              : const Text('Masuk'),
+                                ),
+                                TextButton(
+                                  onPressed: auth.isLoading
+                                      ? null
+                                      : _handleLogin,
+                                  child: const Text('Coba lagi'),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                        ],
+                        Semantics(
+                          button: true,
+                          enabled: !auth.isLoading,
+                          child: SizedBox(
+                            width: double.infinity,
+                            height: 52,
+                            child: ElevatedButton(
+                              onPressed:
+                                  auth.isLoading ? null : _handleLogin,
+                              child: auth.isLoading
+                                  ? SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .surface,
+                                      ),
+                                    )
+                                  : const Text('Masuk'),
+                            ),
+                          ),
                         ),
-                      ),
+                      ],
                     );
                   },
                 ),

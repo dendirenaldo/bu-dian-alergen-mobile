@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/utils/display_names.dart';
 
 class AllergenBadge extends StatelessWidget {
   final String name;
@@ -14,62 +15,55 @@ class AllergenBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: _getSeverityColor(context).withValues(alpha: 0.05),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: _getSeverityColor(context).withValues(alpha: 0.2),
+    final textTheme = Theme.of(context).textTheme;
+    return Card(
+      margin: EdgeInsets.zero,
+      color:
+          _getSeverityColor(context).withValues(alpha: 0.05),
+      elevation: 0,
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: _getSeverityColor(context).withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.warning_amber,
+                color: _getSeverityColor(context),
+                size: 20,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: textTheme.titleMedium,
+                  ),
+                  Text(
+                    'Tingkat: ${formatSeverity(severity)}',
+                    style: textTheme.bodySmall?.copyWith(
+                      color: _getSeverityColor(context),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              formatConfidence(confidence),
+              style: textTheme.titleMedium?.copyWith(
+                color: _getSeverityColor(context),
+              ),
+            ),
+          ],
         ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: _getSeverityColor(context).withValues(alpha: 0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.warning_amber,
-              color: _getSeverityColor(context),
-              size: 20,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Text(
-                  'Tingkat: ${severity.toUpperCase()}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: _getSeverityColor(context),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Text(
-            '${(confidence * 100).toInt()}%',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: _getSeverityColor(context),
-            ),
-          ),
-        ],
       ),
     );
   }

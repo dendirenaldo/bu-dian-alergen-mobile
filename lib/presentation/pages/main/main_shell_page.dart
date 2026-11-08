@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../providers/bottom_nav_provider.dart';
-import '../../providers/history_provider.dart';
 import '../home/home_page.dart';
 import '../detection/detection_page.dart';
 import '../history/history_page.dart';
@@ -14,8 +13,9 @@ class MainShellPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<BottomNavProvider>(
-      builder: (context, navProvider, _) {
+    return Selector<BottomNavProvider, int>(
+      selector: (_, nav) => nav.currentIndex,
+      builder: (context, currentIndex, _) {
         return PopScope(
           canPop: false,
           onPopInvokedWithResult: (didPop, result) {
@@ -42,22 +42,35 @@ class MainShellPage extends StatelessWidget {
             );
           },
           child: Scaffold(
-            body: IndexedStack(
-              index: navProvider.currentIndex,
-              children: const [
-                HomePage(),
-                DetectionPage(),
-                HistoryPage(),
-                ProfilePage(),
-              ],
+            body: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0.02, 0),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: IndexedStack(
+                key: ValueKey<int>(currentIndex),
+                index: currentIndex,
+                children: const [
+                  HomePage(key: PageStorageKey('home')),
+                  DetectionPage(key: PageStorageKey('detection')),
+                  HistoryPage(key: PageStorageKey('history')),
+                  ProfilePage(key: PageStorageKey('profile')),
+                ],
+              ),
             ),
             bottomNavigationBar: NavigationBar(
-              selectedIndex: navProvider.currentIndex,
+              selectedIndex: currentIndex,
               onDestinationSelected: (index) {
-                navProvider.setIndex(index);
-                if (index == 2) {
-                  context.read<HistoryProvider>().loadHistory();
-                }
+                context.read<BottomNavProvider>().setIndex(index);
               },
               destinations: const [
                 NavigationDestination(
@@ -67,7 +80,8 @@ class MainShellPage extends StatelessWidget {
                 ),
                 NavigationDestination(
                   icon: Icon(LucideIcons.scanLine),
-                  selectedIcon: Icon(LucideIcons.scanLine, color: Color(0xFF2563EB)),
+                  selectedIcon:
+                      Icon(LucideIcons.scanLine, color: Color(0xFF2563EB)),
                   label: 'Deteksi',
                 ),
                 NavigationDestination(

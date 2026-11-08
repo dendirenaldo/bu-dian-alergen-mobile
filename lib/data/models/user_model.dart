@@ -29,7 +29,6 @@ class UserModel {
       phone: data['phone'],
       avatarUrl: data['avatarUrl'],
       role: data['role'] ?? 'user',
-      // Login/register hanya kirim {id,name,email,role} — jangan crash.
       createdAt: rawCreated != null ? DateTime.tryParse(rawCreated) ?? DateTime.now() : DateTime.now(),
     );
   }

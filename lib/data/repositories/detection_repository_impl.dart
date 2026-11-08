@@ -1,4 +1,5 @@
 import 'dart:io';
+import '../../core/network/api_result.dart';
 import '../../domain/entities/detection_entity.dart';
 import '../../domain/repositories/detection_repository.dart';
 import '../../domain/repositories/result.dart';
@@ -15,6 +16,8 @@ class DetectionRepositoryImpl implements DetectionRepository {
     try {
       final result = await _dataSource.detectAllergens(image, model: model);
       return Result.success(result.detection.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -25,6 +28,8 @@ class DetectionRepositoryImpl implements DetectionRepository {
     try {
       final result = await _dataSource.detectFromText(text, model: model);
       return Result.success(result.detection.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -38,6 +43,8 @@ class DetectionRepositoryImpl implements DetectionRepository {
     try {
       final model = await _dataSource.getDetection(id);
       return Result.success(model.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -48,6 +55,8 @@ class DetectionRepositoryImpl implements DetectionRepository {
     try {
       await _dataSource.deleteDetection(id);
       return Result.success(null);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }

@@ -1,3 +1,4 @@
+import '../../core/network/api_result.dart';
 import '../../domain/entities/detection_entity.dart';
 import '../../domain/entities/paginated_entity.dart';
 import '../../domain/repositories/history_repository.dart';
@@ -35,6 +36,8 @@ class HistoryRepositoryImpl implements HistoryRepository {
           totalPages: response.totalPages,
         ),
       );
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }

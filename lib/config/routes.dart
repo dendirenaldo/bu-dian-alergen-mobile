@@ -11,12 +11,19 @@ import '../presentation/pages/history/history_detail_page.dart';
 import '../presentation/pages/profile/profile_page.dart';
 import '../presentation/pages/profile/edit_profile_page.dart';
 import '../presentation/pages/profile/settings_page.dart';
+import '../presentation/pages/auth/forgot_password_page.dart';
+import '../presentation/pages/auth/reset_password_page.dart';
+import '../presentation/pages/profile/change_password_page.dart';
+import '../presentation/pages/profile/terms_page.dart';
+import '../presentation/pages/profile/privacy_page.dart';
 
 class AppRoutes {
   static const String splash = '/';
   static const String onboarding = '/onboarding';
   static const String login = '/login';
   static const String register = '/register';
+  static const String forgotPassword = '/forgot-password';
+  static const String resetPassword = '/reset-password';
   static const String main = '/main';
   static const String detect = '/detect';
   static const String detectionResult = '/detection-result';
@@ -25,6 +32,9 @@ class AppRoutes {
   static const String profile = '/profile';
   static const String editProfile = '/edit-profile';
   static const String settings = '/settings';
+  static const String changePassword = '/change-password';
+  static const String terms = '/terms';
+  static const String privacy = '/privacy';
 
   static Map<String, WidgetBuilder> get routes => {
         splash: (context) => const SplashPage(),
@@ -43,5 +53,15 @@ class AppRoutes {
         editProfile: (context) => const EditProfilePage(),
         settings: (context) => const SettingsPage(),
         detectionResult: (context) => const DetectionResultPage(),
+        forgotPassword: (context) => const ForgotPasswordPage(),
+        resetPassword: (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final token = args?['token'] as String? ?? '';
+          return ResetPasswordPage(token: token);
+        },
+        changePassword: (context) => const ChangePasswordPage(),
+        terms: (context) => const TermsPage(),
+        privacy: (context) => const PrivacyPage(),
       };
 }

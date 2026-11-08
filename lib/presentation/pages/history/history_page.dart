@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../config/routes.dart';
 import '../../../core/utils/auth_token.dart';
+import '../../../core/widgets/skeleton/history_list_skeleton.dart';
 import '../../providers/history_provider.dart';
 import '../../widgets/history/history_item_card.dart';
 import '../../widgets/history/filter_sort_sheet.dart';
@@ -25,7 +26,6 @@ class _HistoryPageState extends State<HistoryPage> {
     super.initState();
     _scrollController.addListener(_onScroll);
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      // Riwayat hanya untuk akun; tamu tidak punya riwayat tersimpan.
       if (await getValidToken() == null) {
         if (!mounted) return;
         setState(() => _isGuest = true);
@@ -39,7 +39,6 @@ class _HistoryPageState extends State<HistoryPage> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Sinkronkan ulang bila status masuk berubah (mis. kembali dari login).
     getValidToken().then((token) {
       if (!mounted) return;
       final guest = token == null;
@@ -66,7 +65,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    // Tamu: tawarkan masuk, bukan error 401.
     if (_isGuest) {
       return Scaffold(
         appBar: AppBar(title: const Text('Riwayat')),
@@ -126,10 +124,6 @@ class _HistoryPageState extends State<HistoryPage> {
               HapticFeedback.lightImpact();
               showModalBottomSheet(
                 context: context,
-                isScrollControlled: true,
-                shape: const RoundedRectangleBorder(
-                  borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-                ),
                 builder: (_) => const FilterSortSheet(),
               );
             },
@@ -168,8 +162,11 @@ class _HistoryPageState extends State<HistoryPage> {
             child: Consumer<HistoryProvider>(
               builder: (context, provider, _) {
                 if (provider.isLoading) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+                  return const SingleChildScrollView(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 12),
+                      child: HistoryListSkeleton(),
+                    ),
                   );
                 }
 

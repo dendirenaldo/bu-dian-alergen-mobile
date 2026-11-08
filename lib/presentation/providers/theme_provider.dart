@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ThemeProvider extends ChangeNotifier {
   static const String _key = 'theme_mode';
   ThemeMode _themeMode = ThemeMode.light;
+  bool _disposed = false;
 
   ThemeMode get themeMode => _themeMode;
   bool get isDark => _themeMode == ThemeMode.dark;
@@ -13,10 +14,15 @@ class ThemeProvider extends ChangeNotifier {
   }
 
   Future<void> _loadTheme() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isDark = prefs.getBool(_key) ?? false;
-    _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final isDark = prefs.getBool(_key) ?? false;
+      if (_disposed) return;
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      notifyListeners();
+    } catch (_) {
+      // Keep default theme on storage failure.
+    }
   }
 
   Future<void> toggleTheme() async {
@@ -24,8 +30,19 @@ class ThemeProvider extends ChangeNotifier {
         ? ThemeMode.dark
         : ThemeMode.light;
 
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_key, _themeMode == ThemeMode.dark);
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_key, _themeMode == ThemeMode.dark);
+    } catch (_) {
+      // Best-effort persistence; theme still applies in-memory.
+    }
+    if (_disposed) return;
     notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
   }
 }

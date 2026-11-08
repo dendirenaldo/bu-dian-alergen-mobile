@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/utils/display_names.dart';
 import '../../providers/detection_provider.dart';
 import '../../widgets/detection/result_card.dart';
 import '../../widgets/detection/allergen_badge.dart';
@@ -11,6 +11,7 @@ class DetectionResultPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
     return Consumer<DetectionProvider>(
       builder: (context, provider, _) {
         final result = provider.result;
@@ -39,25 +40,28 @@ class DetectionResultPage extends StatelessWidget {
                   title: 'Ringkasan Deteksi',
                   child: Column(
                     children: [
-                      _buildResultRow(context, 'Hasil', result.result),
+                      _buildResultRow(
+                          context, 'Hasil', formatResult(result.result)),
                       _buildResultRow(
                         context,
                         'Confidence',
-                        '${(result.confidenceScore * 100).toStringAsFixed(1)}%',
+                        formatConfidence(result.confidenceScore),
                       ),
-                      _buildResultRow(context, 'Metode', result.detectionMethod),
+                      _buildResultRow(
+                          context, 'Metode', formatMethod(result.detectionMethod)),
                       if (result.modelName != null)
-                        _buildResultRow(context, 'Model', result.modelName!.toUpperCase()),
+                        _buildResultRow(context, 'Model',
+                            formatModelName(result.modelName)),
                       if (result.processingTimeMs != null)
                         _buildResultRow(
                           context,
                           'Waktu Proses',
-                          '${result.processingTimeMs}ms',
+                          formatDuration(result.processingTimeMs),
                         ),
                       _buildResultRow(
                         context,
                         'Discan Pada',
-                        DateFormat('d MMM yyyy HH:mm').format(result.createdAt),
+                        formatDateId(result.createdAt),
                       ),
                     ],
                   ),
@@ -66,11 +70,7 @@ class DetectionResultPage extends StatelessWidget {
                   const SizedBox(height: 20),
                   Text(
                     'Alergen Terdeteksi',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
                   ...result.allergens!.map(
@@ -88,27 +88,16 @@ class DetectionResultPage extends StatelessWidget {
                 if (result.ocrText != null) ...[
                   Text(
                     'Teks Terekstrak',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
-                    ),
+                    style: textTheme.titleLarge,
                   ),
                   const SizedBox(height: 12),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surface,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3)),
-                    ),
-                    child: Text(
-                      result.ocrText!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
-                        height: 1.5,
+                  Card(
+                    margin: EdgeInsets.zero,
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        result.ocrText!,
+                        style: textTheme.bodyMedium,
                       ),
                     ),
                   ),
@@ -134,6 +123,8 @@ class DetectionResultPage extends StatelessWidget {
   }
 
   Widget _buildResultRow(BuildContext context, String label, String value) {
+    final textTheme = Theme.of(context).textTheme;
+    final colorScheme = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -141,18 +132,13 @@ class DetectionResultPage extends StatelessWidget {
         children: [
           Text(
             label,
-            style: TextStyle(
-              fontSize: 14,
-              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
+            style: textTheme.bodyMedium?.copyWith(
+              color: colorScheme.onSurface.withValues(alpha: 0.6),
             ),
           ),
           Text(
             value,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Theme.of(context).colorScheme.onSurface,
-            ),
+            style: textTheme.titleMedium,
           ),
         ],
       ),

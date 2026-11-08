@@ -19,14 +19,12 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void initState() {
     super.initState();
-    _navigateToNext();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _navigateToNext();
+    });
   }
 
   Future<void> _navigateToNext() async {
-    // Muat nama aplikasi dari backend (fallback bila gagal), paralel
-    // dengan delay splash agar tidak menambah waktu tunggu. checkAuth
-    // menyelaraskan AuthProvider._user dengan token tersimpan agar status
-    // masuk konsisten di seluruh halaman (best-effort, offline = tamu).
     final settingsFuture = context
         .read<AppSettingsProvider>()
         .load()
@@ -42,13 +40,16 @@ class _SplashPageState extends State<SplashPage> {
     ]);
     if (!mounted) return;
 
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    bool onboardingComplete = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+    } catch (_) {
+      onboardingComplete = false;
+    }
 
     if (!mounted) return;
 
-    // Routing berdasar hasil checkAuth (single source of truth),
-    // bukan token mentah — token basi sudah dibersihkan di checkAuth.
     if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
     } else if (!onboardingComplete) {

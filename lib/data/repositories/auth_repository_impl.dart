@@ -1,3 +1,4 @@
+import '../../core/network/api_result.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../../domain/repositories/result.dart';
@@ -15,6 +16,8 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _dataSource.login(email, password);
       await _dataSource.saveToken(response.token);
       return Result.success(response.user.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -26,6 +29,8 @@ class AuthRepositoryImpl implements AuthRepository {
       final response = await _dataSource.register(name, email, password, phone: phone);
       await _dataSource.saveToken(response.token);
       return Result.success(response.user.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
@@ -46,6 +51,8 @@ class AuthRepositoryImpl implements AuthRepository {
     try {
       final user = await _dataSource.getCurrentUser();
       return Result.success(user.toEntity());
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
     } catch (e) {
       return Result.failure(e.toString());
     }
@@ -58,9 +65,57 @@ class AuthRepositoryImpl implements AuthRepository {
       if (token != null) {
         return Result.success(token);
       }
-      return Result.failure('No token found');
+      return Result.failure('No token found', statusCode: 401);
     } catch (e) {
       return Result.failure(e.toString());
+    }
+  }
+
+  @override
+  Future<Result<String>> forgotPassword(String email) async {
+    try {
+      final message = await _dataSource.forgotPassword(email);
+      return Result.success(message);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Result<String>> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    try {
+      final message = await _dataSource.resetPassword(
+        token: token,
+        newPassword: newPassword,
+      );
+      return Result.success(message);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Result<void>> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    try {
+      await _dataSource.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      return Result.success(null);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
