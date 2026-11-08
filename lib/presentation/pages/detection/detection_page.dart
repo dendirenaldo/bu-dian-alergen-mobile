@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/tour/guided_tour_service.dart';
 import '../../../core/tour/tour_keys.dart';
 import '../../../core/utils/display_names.dart';
@@ -38,19 +40,36 @@ class _DetectionPageState extends State<DetectionPage> {
     super.dispose();
   }
 
+  /// Retry memakai Idempotency-Key yang SAMA (tidak dobel kuota).
   Future<void> _retryLastAction() async {
     final provider = context.read<DetectionProvider>();
-    if (_isTextMode) {
-      await provider.detectFromText(_textCtrl.text);
-    } else {
-      await provider.detectAllergens();
-    }
+    await provider.retryLast();
     if (!mounted) return;
     if (provider.result != null) {
       Navigator.of(context).push(
         MaterialPageRoute(
           builder: (_) => const DetectionResultPage(),
         ),
+      );
+    }
+  }
+
+  Future<void> _shareLastResult() async {
+    final result = context.read<DetectionProvider>().result;
+    if (result == null) return;
+    final allergens = (result.allergens ?? []).map((a) => '- ${a.name}').join('\n');
+    final text = 'Hasil Deteksi Alergen\n'
+        'Hasil: ${formatResult(result.result)}\n'
+        'Keyakinan: ${formatConfidence(result.confidenceScore)}\n'
+        'Model: ${formatModelName(result.modelName)}\n'
+        '${allergens.isEmpty ? 'Tidak ada alergen terdeteksi.' : 'Alergen:\n$allergens'}';
+    try {
+      await Share.share(text);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hasil disalin ke clipboard')),
       );
     }
   }
@@ -220,6 +239,60 @@ class _DetectionPageState extends State<DetectionPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                // Banner foto kurang jelas (blur / coverage rendah dari SSE).
+                if (provider.ocrLowQuality)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFF59E0B)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(LucideIcons.alertTriangle,
+                            size: 20, color: Color(0xFF92400E)),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Foto kurang jelas, coba foto ulang tegak/fokus',
+                            style: TextStyle(
+                              color: Color(0xFF92400E),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Notice fallback model dari server.
+                if (provider.modelFallbackNotice != null)
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: colorScheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(LucideIcons.info,
+                            size: 20, color: colorScheme.primary),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            provider.modelFallbackNotice!,
+                            style: textTheme.bodySmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 if (_isTextMode) ...[
                   TextField(
                     controller: _textCtrl,
@@ -256,6 +329,19 @@ class _DetectionPageState extends State<DetectionPage> {
                       ),
                     ),
                   ),
+                  if (provider.isProcessing) ...[
+                    const SizedBox(height: 16),
+                    Container(
+                      key: TourKeys.processingBoxKey,
+                      child: ProcessingIndicator(
+                        progress: provider.progress,
+                        stage: provider.currentStage,
+                        message: provider.stageMessage,
+                        etaMs: provider.etaMs,
+                        onCancel: provider.cancel,
+                      ),
+                    ),
+                  ],
                 ] else if (provider.selectedImage != null) ...[
                   ImagePreviewWidget(
                     image: provider.selectedImage!,
@@ -265,7 +351,13 @@ class _DetectionPageState extends State<DetectionPage> {
                   if (provider.isProcessing)
                     Container(
                       key: TourKeys.processingBoxKey,
-                      child: const ProcessingIndicator(),
+                      child: ProcessingIndicator(
+                        progress: provider.progress,
+                        stage: provider.currentStage,
+                        message: provider.stageMessage,
+                        etaMs: provider.etaMs,
+                        onCancel: provider.cancel,
+                      ),
                     )
                   else
                     Semantics(
@@ -302,7 +394,13 @@ class _DetectionPageState extends State<DetectionPage> {
                   if (provider.isProcessing)
                     Container(
                       key: TourKeys.processingBoxKey,
-                      child: const ProcessingIndicator(),
+                      child: ProcessingIndicator(
+                        progress: provider.progress,
+                        stage: provider.currentStage,
+                        message: provider.stageMessage,
+                        etaMs: provider.etaMs,
+                        onCancel: provider.cancel,
+                      ),
                     ),
                   Center(
                     child: Semantics(
@@ -346,17 +444,31 @@ class _DetectionPageState extends State<DetectionPage> {
                             ),
                           ],
                         ),
+                        if (provider.retryAfterSec != null) ...[
+                          const SizedBox(height: 4),
+                          _RetryCountdown(
+                              seconds: provider.retryAfterSec!),
+                        ],
                         const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: TextButton.icon(
-                            onPressed: provider.isProcessing
-                                ? null
-                                : _retryLastAction,
-                            icon: const Icon(LucideIcons.refreshCw,
-                                size: 16),
-                            label: const Text('Coba Lagi'),
-                          ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            if (provider.result != null)
+                              TextButton.icon(
+                                onPressed: _shareLastResult,
+                                icon: const Icon(LucideIcons.share2,
+                                    size: 16),
+                                label: const Text('Bagikan'),
+                              ),
+                            TextButton.icon(
+                              onPressed: provider.isProcessing
+                                  ? null
+                                  : _retryLastAction,
+                              icon: const Icon(LucideIcons.refreshCw,
+                                  size: 16),
+                              label: const Text('Coba Lagi'),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -474,6 +586,53 @@ class _DetectionPageState extends State<DetectionPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Hitung mundur [seconds] → `Mm:Ss` untuk pembatasan 429.
+class _RetryCountdown extends StatefulWidget {
+  final int seconds;
+  const _RetryCountdown({required this.seconds});
+
+  @override
+  State<_RetryCountdown> createState() => _RetryCountdownState();
+}
+
+class _RetryCountdownState extends State<_RetryCountdown> {
+  late int _left;
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _left = widget.seconds;
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_left > 0 && mounted) setState(() => _left--);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _RetryCountdown old) {
+    super.didUpdateWidget(old);
+    if (old.seconds != widget.seconds) {
+      _left = widget.seconds;
+    }
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final m = (_left ~/ 60).toString().padLeft(2, '0');
+    final s = (_left % 60).toString().padLeft(2, '0');
+    return Text(
+      'Coba lagi dalam $m:$s',
+      style: Theme.of(context).textTheme.bodySmall,
     );
   }
 }

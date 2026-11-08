@@ -15,6 +15,8 @@ class ApiEndpoints {
   static const String detectPublicQuota = '/api/v1/detections/public/quota';
   static const String history = '/api/v1/detections';
   static String historyDetail(int id) => '/api/v1/detections/$id';
+  static const String stream = '/api/v1/detections/stream';
+  static String jobCancel(String id) => '/api/v1/detections/job/$id';
 
   static const String dashboardStats = '/api/v1/dashboard/stats';
   static const String dashboardRecent = '/api/v1/dashboard/recent';

@@ -22,6 +22,9 @@ String _newUuid() {
   return '${h(8)}-${h(4)}-4${h(3)}-${['8', '9', 'a', 'b'][r.nextInt(4)]}${h(3)}-${h(12)}';
 }
 
+/// Idempotency-Key baru (uuid v4) untuk setiap aksi deteksi.
+String newIdempotencyKey() => _newUuid();
+
 Future<String> ensureAnonId() async {
   try {
     final prefs = await SharedPreferences.getInstance();
@@ -60,12 +63,102 @@ ApiError _detectionError(http.Response r, String fallback) {
   return parsed;
 }
 
+String? _headerOf(Map<String, String> headers, String name) {
+  final lower = name.toLowerCase();
+  for (final e in headers.entries) {
+    if (e.key.toLowerCase() == lower) return e.value;
+  }
+  return null;
+}
+
+int? _retryAfterOf(Map<String, String> headers) {
+  final v = _headerOf(headers, 'retry-after');
+  if (v == null) return null;
+  return int.tryParse(v.trim());
+}
+
+/// Satu event progres SSE dari `GET /api/v1/detections/stream`.
+class SseProgressEvent {
+  final String stage;
+  final int progress;
+  final String message;
+  final int? etaMs;
+  final Map<String, dynamic>? data;
+
+  const SseProgressEvent({
+    required this.stage,
+    required this.progress,
+    required this.message,
+    this.etaMs,
+    this.data,
+  });
+
+  factory SseProgressEvent.fromJson(Map<String, dynamic> json) {
+    int progress = 0;
+    final raw = json['progress'];
+    if (raw is num) {
+      progress = raw.toInt();
+    } else {
+      progress = int.tryParse(raw?.toString() ?? '') ?? 0;
+    }
+    progress = progress.clamp(0, 100);
+    int? eta;
+    final rawEta = json['etaMs'] ?? json['eta_ms'];
+    if (rawEta is num) {
+      eta = rawEta.toInt();
+    } else if (rawEta != null) {
+      eta = int.tryParse(rawEta.toString());
+    }
+    Map<String, dynamic>? data;
+    final rawData = json['data'];
+    if (rawData is Map) data = rawData.cast<String, dynamic>();
+    return SseProgressEvent(
+      stage: (json['stage'] ?? '').toString(),
+      progress: progress,
+      message: (json['message'] ?? '').toString(),
+      etaMs: eta,
+      data: data,
+    );
+  }
+
+  bool get isDone => stage == 'done';
+  bool get isError => stage == 'error';
+}
+
+/// Hasil POST deteksi beserta metadata header job.
+class DetectionPostOutcome {
+  final DetectionResultModel? result;
+  final String? jobId;
+  final String? modelFallback;
+  final int? retryAfterSec;
+  final bool isPending;
+
+  const DetectionPostOutcome({
+    this.result,
+    this.jobId,
+    this.modelFallback,
+    this.retryAfterSec,
+    this.isPending = false,
+  });
+}
+
+/// Error POST yang membawa metadata header (jobId / retryAfter).
+class DetectionPostException extends ApiException {
+  final String? jobId;
+  final int? retryAfterSec;
+  const DetectionPostException(
+    super.error, {
+    this.jobId,
+    this.retryAfterSec,
+  });
+}
+
 class DetectionRemoteDataSource {
   final http.Client _client;
 
   DetectionRemoteDataSource({http.Client? client}) : _client = client ?? http.Client();
 
-  Future<Map<String, String>> _headers({bool includeAnon = false}) async {
+  Future<Map<String, String>> _headers({bool includeAnon = false, String? idempotencyKey}) async {
     String? token;
     try {
       token = await getValidToken();
@@ -79,6 +172,9 @@ class DetectionRemoteDataSource {
     if (includeAnon || token == null) {
       map['x-anon-id'] = await ensureAnonId();
     }
+    if (idempotencyKey != null && idempotencyKey.trim().isNotEmpty) {
+      map['Idempotency-Key'] = idempotencyKey.trim();
+    }
     return map;
   }
 
@@ -89,7 +185,81 @@ class DetectionRemoteDataSource {
     } catch (_) {}
   }
 
-  Future<DetectionResultModel> detectAllergens(File image, {String? model}) async {
+  DetectionPostOutcome _outcomeOf(http.Response response) {
+    final jobId = _headerOf(response.headers, 'x-job-id');
+    final fallback = _headerOf(response.headers, 'x-model-fallback');
+    final retryAfter = _retryAfterOf(response.headers);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return DetectionPostOutcome(
+        result: DetectionResultModel.fromJson(jsonDecode(response.body)),
+        jobId: jobId,
+        modelFallback: fallback,
+        retryAfterSec: retryAfter,
+      );
+    }
+    if (response.statusCode == 202) {
+      // 202 Accepted: job masih diproses, hasil menyusul via SSE.
+      String? pendingJob = jobId;
+      try {
+        final body = jsonDecode(response.body);
+        final data = body is Map ? (body['data'] as Map?) ?? body : null;
+        pendingJob ??= (data?['uploadId'] ?? data?['jobId'])?.toString();
+      } catch (_) {}
+      return DetectionPostOutcome(
+        jobId: pendingJob,
+        modelFallback: fallback,
+        retryAfterSec: retryAfter,
+        isPending: true,
+      );
+    }
+    throw DetectionPostException(
+      _detectionError(response, 'Deteksi gagal'),
+      jobId: jobId,
+      retryAfterSec: retryAfter,
+    );
+  }
+
+  DetectionPostOutcome _textOutcomeOf(http.Response response) {
+    final jobId = _headerOf(response.headers, 'x-job-id');
+    final fallback = _headerOf(response.headers, 'x-model-fallback');
+    final retryAfter = _retryAfterOf(response.headers);
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return DetectionPostOutcome(
+        result: DetectionResultModel.fromJson(jsonDecode(response.body)),
+        jobId: jobId,
+        modelFallback: fallback,
+        retryAfterSec: retryAfter,
+      );
+    }
+    if (response.statusCode == 202) {
+      String? pendingJob = jobId;
+      try {
+        final body = jsonDecode(response.body);
+        final data = body is Map ? (body['data'] as Map?) ?? body : null;
+        pendingJob ??= (data?['uploadId'] ?? data?['jobId'])?.toString();
+      } catch (_) {}
+      return DetectionPostOutcome(
+        jobId: pendingJob,
+        modelFallback: fallback,
+        retryAfterSec: retryAfter,
+        isPending: true,
+      );
+    }
+    throw DetectionPostException(
+      _detectionError(response, 'Deteksi teks gagal'),
+      jobId: jobId,
+      retryAfterSec: retryAfter,
+    );
+  }
+
+  Future<DetectionResultModel> detectAllergens(File image, {String? model, String? idempotencyKey}) async {
+    final outcome = await detectAllergensDetailed(image, model: model, idempotencyKey: idempotencyKey);
+    final r = outcome.result;
+    if (r != null) return r;
+    throw const ApiException(ApiError(statusCode: 202, message: 'Deteksi masih diproses. Coba lagi.'));
+  }
+
+  Future<DetectionPostOutcome> detectAllergensDetailed(File image, {String? model, String? idempotencyKey}) async {
     ImageUploadHelper.validate(image);
     final m = DetectionModels.sanitize(model);
 
@@ -110,23 +280,38 @@ class DetectionRemoteDataSource {
     }
 
     try {
-      final headers = await _headers();
+      final headers = await _headers(idempotencyKey: idempotencyKey);
       final authed = headers.containsKey('Authorization');
       final response = await send(authed ? ApiEndpoints.detect : ApiEndpoints.detectPublic, headers);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return DetectionResultModel.fromJson(jsonDecode(response.body));
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 202) {
+        return _outcomeOf(response);
       }
       if (response.statusCode == 401 && authed) {
         await _clearTokenBestEffort();
-        final guestHeaders = await _headers(includeAnon: true);
+        final guestHeaders = await _headers(includeAnon: true, idempotencyKey: idempotencyKey);
         final retry = await send(ApiEndpoints.detectPublic, guestHeaders);
-        if (retry.statusCode == 200 || retry.statusCode == 201) {
-          return DetectionResultModel.fromJson(jsonDecode(retry.body));
+        if (retry.statusCode == 200 ||
+            retry.statusCode == 201 ||
+            retry.statusCode == 202) {
+          return _outcomeOf(retry);
         }
-        throw ApiException(_detectionError(retry, 'Deteksi gagal'));
+        final jobId = _headerOf(retry.headers, 'x-job-id');
+        throw DetectionPostException(
+          _detectionError(retry, 'Deteksi gagal'),
+          jobId: jobId,
+          retryAfterSec: _retryAfterOf(retry.headers),
+        );
       }
-      throw ApiException(_detectionError(response, 'Deteksi gagal'));
+      throw DetectionPostException(
+        _detectionError(response, 'Deteksi gagal'),
+        jobId: _headerOf(response.headers, 'x-job-id'),
+        retryAfterSec: _retryAfterOf(response.headers),
+      );
+    } on DetectionPostException {
+      rethrow;
     } on ApiException {
       rethrow;
     } on TimeoutException catch (e) {
@@ -137,7 +322,14 @@ class DetectionRemoteDataSource {
     }
   }
 
-  Future<DetectionResultModel> detectFromText(String text, {String? model}) async {
+  Future<DetectionResultModel> detectFromText(String text, {String? model, String? idempotencyKey}) async {
+    final outcome = await detectFromTextDetailed(text, model: model, idempotencyKey: idempotencyKey);
+    final r = outcome.result;
+    if (r != null) return r;
+    throw const ApiException(ApiError(statusCode: 202, message: 'Deteksi masih diproses. Coba lagi.'));
+  }
+
+  Future<DetectionPostOutcome> detectFromTextDetailed(String text, {String? model, String? idempotencyKey}) async {
     final m = DetectionModels.sanitize(model);
 
     Future<http.Response> send(String path, Map<String, String> headers) async {
@@ -152,24 +344,38 @@ class DetectionRemoteDataSource {
     }
 
     try {
-      final headers = await _headers();
+      final headers = await _headers(idempotencyKey: idempotencyKey);
       final authed = headers.containsKey('Authorization');
       final response =
           await send(authed ? ApiEndpoints.detectText : ApiEndpoints.detectPublicText, headers);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return DetectionResultModel.fromJson(jsonDecode(response.body));
+      if (response.statusCode == 200 ||
+          response.statusCode == 201 ||
+          response.statusCode == 202) {
+        return _textOutcomeOf(response);
       }
       if (response.statusCode == 401 && authed) {
         await _clearTokenBestEffort();
-        final guestHeaders = await _headers(includeAnon: true);
+        final guestHeaders = await _headers(includeAnon: true, idempotencyKey: idempotencyKey);
         final retry = await send(ApiEndpoints.detectPublicText, guestHeaders);
-        if (retry.statusCode == 200 || retry.statusCode == 201) {
-          return DetectionResultModel.fromJson(jsonDecode(retry.body));
+        if (retry.statusCode == 200 ||
+            retry.statusCode == 201 ||
+            retry.statusCode == 202) {
+          return _textOutcomeOf(retry);
         }
-        throw ApiException(_detectionError(retry, 'Deteksi teks gagal'));
+        throw DetectionPostException(
+          _detectionError(retry, 'Deteksi teks gagal'),
+          jobId: _headerOf(retry.headers, 'x-job-id'),
+          retryAfterSec: _retryAfterOf(retry.headers),
+        );
       }
-      throw ApiException(_detectionError(response, 'Deteksi teks gagal'));
+      throw DetectionPostException(
+        _detectionError(response, 'Deteksi teks gagal'),
+        jobId: _headerOf(response.headers, 'x-job-id'),
+        retryAfterSec: _retryAfterOf(response.headers),
+      );
+    } on DetectionPostException {
+      rethrow;
     } on ApiException {
       rethrow;
     } on TimeoutException catch (e) {
@@ -177,6 +383,113 @@ class DetectionRemoteDataSource {
     } catch (e) {
       if (e is ApiException) rethrow;
       throw ApiException(transportError(e, fallback: 'Deteksi teks gagal'));
+    }
+  }
+
+  /// Streaming SSE manual via [http.Client] (tanpa package SSE berat).
+  ///
+  /// Membuka `GET /api/v1/detections/stream?uploadId=...` dengan header
+  /// `Accept: text/event-stream`, mem-parsing baris `data: {...}` menjadi
+  /// [SseProgressEvent]. Komentar SSE (`:ping`) dan baris kosong diabaikan.
+  Stream<SseProgressEvent> watchJob(String uploadId) {
+    final controller = StreamController<SseProgressEvent>();
+    final streamClient = http.Client();
+    bool closed = false;
+
+    Future<void> run() async {
+      try {
+        final headers = await _headers();
+        final req = http.Request(
+          'GET',
+          Uri.parse('${AppConfig.join(ApiEndpoints.stream)}?uploadId=${Uri.encodeQueryComponent(uploadId)}'),
+        );
+        req.headers.addAll({...headers, 'Accept': 'text/event-stream'});
+        final streamed = await streamClient.send(req).timeout(const Duration(seconds: 30));
+        if (streamed.statusCode != 200) {
+          throw ApiException(ApiError(
+            statusCode: streamed.statusCode,
+            message: 'Gagal membuka progres (HTTP ${streamed.statusCode})',
+          ));
+        }
+        final buffer = StringBuffer();
+        await for (final chunk in streamed.stream.transform(utf8.decoder)) {
+          if (closed || controller.isClosed) break;
+          buffer.write(chunk);
+          var text = buffer.toString();
+          var idx = text.indexOf('\n');
+          while (idx != -1) {
+            final line = text.substring(0, idx).trim();
+            text = text.substring(idx + 1);
+            if (line.startsWith('data:')) {
+              final payload = line.substring(5).trim();
+              if (payload.isNotEmpty) {
+                try {
+                  final json = jsonDecode(payload);
+                  if (json is Map) {
+                    controller.add(SseProgressEvent.fromJson(json.cast<String, dynamic>()));
+                  }
+                } catch (_) {
+                  // Abaikan baris data yang bukan JSON valid.
+                }
+              }
+            }
+            // Abaikan komentar heartbeat (`:ping`) & baris kosong.
+            idx = text.indexOf('\n');
+          }
+          buffer.clear();
+          buffer.write(text);
+        }
+        // Sisa buffer tanpa newline trailing.
+        final rest = buffer.toString().trim();
+        if (rest.startsWith('data:') && !controller.isClosed) {
+          try {
+            final json = jsonDecode(rest.substring(5).trim());
+            if (json is Map) {
+              controller.add(SseProgressEvent.fromJson(json.cast<String, dynamic>()));
+            }
+          } catch (_) {}
+        }
+        if (!controller.isClosed) await controller.close();
+      } catch (e) {
+        if (!controller.isClosed) {
+          controller.addError(e);
+          await controller.close();
+        }
+      } finally {
+        streamClient.close();
+      }
+    }
+
+    controller.onCancel = () {
+      closed = true;
+      try {
+        streamClient.close();
+      } catch (_) {}
+    };
+
+    unawaited(run());
+    return controller.stream;
+  }
+
+  /// `DELETE /api/v1/detections/job/:id` — batalkan job + refund kuota.
+  Future<void> cancelJob(String jobId) async {
+    try {
+      final uri = Uri.parse(AppConfig.join(ApiEndpoints.jobCancel(jobId)));
+      final response = await _client.delete(uri, headers: await _headers()).timeout(AppConfig.timeout);
+      if (response.statusCode == 200 ||
+          response.statusCode == 202 ||
+          response.statusCode == 204 ||
+          response.statusCode == 404) {
+        return;
+      }
+      throw ApiException(_detectionError(response, 'Gagal membatalkan job'));
+    } on ApiException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      throw ApiException(transportError(e, fallback: 'Gagal membatalkan job'));
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(transportError(e, fallback: 'Gagal membatalkan job'));
     }
   }
 
@@ -241,3 +554,5 @@ class DetectionRemoteDataSource {
     }
   }
 }
+
+void unawaited(Future<void> future) {}

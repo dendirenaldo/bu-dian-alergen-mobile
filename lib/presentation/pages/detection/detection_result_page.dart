@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/tour/tour_keys.dart';
 import '../../../core/utils/display_names.dart';
 import '../../providers/detection_provider.dart';
@@ -9,6 +11,28 @@ import '../../widgets/detection/allergen_badge.dart';
 
 class DetectionResultPage extends StatelessWidget {
   const DetectionResultPage({super.key});
+
+  Future<void> _shareResult(BuildContext context) async {
+    final provider = context.read<DetectionProvider>();
+    final result = provider.result;
+    if (result == null) return;
+    final allergens =
+        (result.allergens ?? []).map((a) => '- ${a.name}').join('\n');
+    final text = 'Hasil Deteksi Alergen\n'
+        'Hasil: ${formatResult(result.result)}\n'
+        'Keyakinan: ${formatConfidence(result.confidenceScore)}\n'
+        'Model: ${formatModelName(result.modelName)}\n'
+        '${allergens.isEmpty ? 'Tidak ada alergen terdeteksi.' : 'Alergen:\n$allergens'}';
+    try {
+      await Share.share(text);
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Hasil disalin ke clipboard')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,9 +50,14 @@ class DetectionResultPage extends StatelessWidget {
           appBar: AppBar(
             title: const Text('Hasil Deteksi'),
             actions: [
-              IconButton(
-                icon: const Icon(LucideIcons.share2),
-                onPressed: () {},
+              Semantics(
+                button: true,
+                label: 'Bagikan hasil deteksi',
+                child: IconButton(
+                  icon: const Icon(LucideIcons.share2),
+                  tooltip: 'Bagikan',
+                  onPressed: () => _shareResult(context),
+                ),
               ),
             ],
           ),
@@ -87,8 +116,7 @@ class DetectionResultPage extends StatelessWidget {
                           'Confidence',
                           formatConfidence(result.confidenceScore),
                         ),
-                        _buildResultRow(
-                            context, 'Metode', formatMethod(result.detectionMethod)),
+                        _buildResultRow(context, 'Metode', formatMethod(result.detectionMethod)),
                         if (result.modelName != null)
                           _buildResultRow(context, 'Model',
                               formatModelName(result.modelName)),
@@ -127,23 +155,51 @@ class DetectionResultPage extends StatelessWidget {
                 ],
                 const SizedBox(height: 24),
                 if (result.ocrText != null) ...[
-                  Text(
-                    'Teks Terekstrak',
-                    style: textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 12),
-                  Card(
-                    margin: EdgeInsets.zero,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Text(
-                        result.ocrText!,
-                        style: textTheme.bodyMedium,
-                      ),
+                  ExpansionTile(
+                    title: Text(
+                      'Teks Terekstrak',
+                      style: textTheme.titleLarge,
                     ),
+                    initiallyExpanded: false,
+                    children: [
+                      Card(
+                        margin: EdgeInsets.zero,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              result.ocrText!,
+                              style: textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
                 ],
-                const SizedBox(height: 32),
+                const SizedBox(height: 16),
+                Text(
+                  'Hasil ini bukan diagnosis medis. Bila ragu terhadap suatu bahan, konsultasikan dengan tenaga kesehatan.',
+                  style: textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: OutlinedButton.icon(
+                    onPressed: () => _shareResult(context),
+                    icon: const Icon(LucideIcons.share2, size: 18),
+                    label: const Text('Bagikan Hasil'),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   height: 52,
