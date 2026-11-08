@@ -9,7 +9,7 @@ import '../../providers/auth_provider.dart';
 /// Halaman verifikasi email.
 ///
 /// Mendukung tiga alur:
-/// 1. Deep link berisi token (`budian://verify-email?token=` atau
+/// 1. Deep link berisi token (`allergendetector://verify-email?token=` atau
 ///    `https://<domain>/verify-email?token=`) → otomatis verifikasi.
 /// 2. Input manual token dari email (fallback bila link tidak terbuka di app).
 /// 3. Kirim ulang tautan verifikasi ke [email] (pending register / login

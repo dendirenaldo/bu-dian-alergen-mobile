@@ -40,7 +40,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <!-- Deep link verifikasi email & reset password.
-                 Universal link https (App Links) + custom scheme budian:// .
+                 Universal link https (App Links) + custom scheme allergendetector:// .
                  Host mencakup domain produksi (lihat AppConfig.baseUrl /
                  NEXT_PUBLIC_API_URL web) + placeholder bila FRONTEND_URL
                  backend belum diisi domain. -->
@@ -57,7 +57,7 @@
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="budian"/>
+                <data android:scheme="allergendetector"/>
             </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.

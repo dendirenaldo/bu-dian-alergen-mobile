@@ -11,8 +11,8 @@ import '../network/app_navigator.dart';
 /// Mendukung:
 /// - `https://<domain>/verify-email?token=...`
 /// - `https://<domain>/reset-password?token=...`
-/// - `budian://verify-email?token=...`
-/// - `budian://reset-password?token=...`
+/// - `allergendetector://verify-email?token=...`
+/// - `allergendetector://reset-password?token=...`
 ///
 /// Navigasi memakai [appNavigatorKey] agar bisa dipanggil dari luar widget
 /// tree (stream listener / cold-start initial link).
@@ -29,7 +29,7 @@ class AppLinkService {
   ];
 
   /// Custom scheme aplikasi mobile (lihat APP_MOBILE_SCHEME di backend).
-  static const String appScheme = 'budian';
+  static const String appScheme = 'allergendetector';
 
   final AppLinks _appLinks = AppLinks();
   StreamSubscription<Uri>? _subscription;
@@ -112,8 +112,8 @@ class AppLinkService {
     final token = _extractToken(uri)?.trim();
 
     if (scheme == appScheme) {
-      // budian://verify-email?token=... ; host berisi aksi.
-      // Beberapa pengirim memakai budian://verify-email/token atau path.
+      // allergendetector://verify-email?token=... ; host berisi aksi.
+      // Beberapa pengirim memakai allergendetector://verify-email/token atau path.
       final host = uri.host.toLowerCase();
       final firstPath =
           uri.pathSegments.isNotEmpty ? uri.pathSegments.first.toLowerCase() : '';
@@ -124,7 +124,7 @@ class AppLinkService {
       if (action == 'reset-password' || action == 'reset_password') {
         return ParsedAppLink(AppRoutes.resetPassword, token);
       }
-      // Fallback: budian://<token>?  tidak didukung → abaikan.
+      // Fallback: allergendetector://<token>?  tidak didukung → abaikan.
       return null;
     }
 

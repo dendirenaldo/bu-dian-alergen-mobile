@@ -1,4 +1,4 @@
-package com.example.budian_mobile
+package com.example.allergen_detector_mobile
 
 import io.flutter.embedding.android.FlutterActivity
 

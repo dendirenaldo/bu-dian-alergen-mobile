@@ -1,5 +1,5 @@
-name: budian_mobile
-description: Bu Dian Allergen Detection Mobile App
+name: allergen_detector_mobile
+description: Allergen Detector Mobile App
 publish_to: 'none'
 version: 1.0.0+1
 

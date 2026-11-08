@@ -1,4 +1,4 @@
-# Bu Dian Mobile
+# Allergen Detector Mobile
 
 Aplikasi mobile untuk deteksi alergen makanan menggunakan kamera. Dibangun dengan Flutter dan Clean Architecture.
 
