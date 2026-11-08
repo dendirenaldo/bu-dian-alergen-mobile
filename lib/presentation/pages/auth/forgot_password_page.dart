@@ -101,40 +101,44 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     if (auth.error == null) return const SizedBox.shrink();
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .error
-                              .withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              color: Theme.of(context).colorScheme.error,
-                              size: 20,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                auth.error!,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color:
-                                      Theme.of(context).colorScheme.error,
+                      child: Semantics(
+                        liveRegion: true,
+                        label: auth.error!,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context)
+                                .colorScheme
+                                .error
+                                .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.error_outline,
+                                color: Theme.of(context).colorScheme.error,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  auth.error!,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color:
+                                        Theme.of(context).colorScheme.error,
+                                  ),
                                 ),
                               ),
-                            ),
-                            TextButton(
-                              onPressed: auth.isLoading
-                                  ? null
-                                  : _handleSubmit,
-                              child: const Text('Coba lagi'),
-                            ),
-                          ],
+                              TextButton(
+                                onPressed: auth.isLoading
+                                    ? null
+                                    : _handleSubmit,
+                                child: const Text('Coba lagi'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
