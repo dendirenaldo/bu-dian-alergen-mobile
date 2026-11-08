@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/tour/tour_keys.dart';
 import '../../../core/utils/display_names.dart';
 import '../../providers/detection_provider.dart';
 import '../../widgets/detection/result_card.dart';
@@ -36,34 +37,74 @@ class DetectionResultPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ResultCard(
-                  title: 'Ringkasan Deteksi',
-                  child: Column(
-                    children: [
-                      _buildResultRow(
-                          context, 'Hasil', formatResult(result.result)),
-                      _buildResultRow(
-                        context,
-                        'Confidence',
-                        formatConfidence(result.confidenceScore),
+                if (provider.isDemo)
+                  Semantics(
+                    label:
+                        'Mode Latihan, tidak disimpan ke Riwayat',
+                    liveRegion: true,
+                    child: Container(
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 16),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFEF3C7),
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: const Color(0xFFF59E0B),
+                        ),
                       ),
-                      _buildResultRow(
-                          context, 'Metode', formatMethod(result.detectionMethod)),
-                      if (result.modelName != null)
-                        _buildResultRow(context, 'Model',
-                            formatModelName(result.modelName)),
-                      if (result.processingTimeMs != null)
+                      child: const Row(
+                        children: [
+                          Icon(
+                            LucideIcons.info,
+                            size: 20,
+                            color: Color(0xFF92400E),
+                          ),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Mode Latihan — tidak disimpan ke Riwayat',
+                              style: TextStyle(
+                                color: Color(0xFF92400E),
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                Container(
+                  key: TourKeys.resultCardKey,
+                  child: ResultCard(
+                    title: 'Ringkasan Deteksi',
+                    child: Column(
+                      children: [
+                        _buildResultRow(
+                            context, 'Hasil', formatResult(result.result)),
                         _buildResultRow(
                           context,
-                          'Waktu Proses',
-                          formatDuration(result.processingTimeMs),
+                          'Confidence',
+                          formatConfidence(result.confidenceScore),
                         ),
-                      _buildResultRow(
-                        context,
-                        'Discan Pada',
-                        formatDateId(result.createdAt),
-                      ),
-                    ],
+                        _buildResultRow(
+                            context, 'Metode', formatMethod(result.detectionMethod)),
+                        if (result.modelName != null)
+                          _buildResultRow(context, 'Model',
+                              formatModelName(result.modelName)),
+                        if (result.processingTimeMs != null)
+                          _buildResultRow(
+                            context,
+                            'Waktu Proses',
+                            formatDuration(result.processingTimeMs),
+                          ),
+                        _buildResultRow(
+                          context,
+                          'Discan Pada',
+                          formatDateId(result.createdAt),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 if (result.allergens != null && result.allergens!.isNotEmpty) ...[

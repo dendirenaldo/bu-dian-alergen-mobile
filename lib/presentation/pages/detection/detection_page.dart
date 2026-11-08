@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/tour/guided_tour_service.dart';
+import '../../../core/tour/tour_keys.dart';
 import '../../../core/utils/display_names.dart';
+import '../../../data/demo_detection_samples.dart';
 import '../../providers/detection_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../widgets/detection/image_preview_widget.dart';
@@ -51,6 +55,89 @@ class _DetectionPageState extends State<DetectionPage> {
     }
   }
 
+  Future<void> _openTour() async {
+    HapticFeedback.lightImpact();
+    await GuidedTourService.showTour(context);
+  }
+
+  void _showDemoSheet() {
+    HapticFeedback.lightImpact();
+    showModalBottomSheet(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .outline
+                        .withValues(alpha: 0.3),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Pilih contoh latihan',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Tanpa foto dan tanpa kuota.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: 12),
+              for (var i = 0; i < demoDetectionSamples.length; i++)
+                Semantics(
+                  button: true,
+                  label:
+                      'Contoh ${i + 1}: ${demoDetectionTitles[i]}',
+                  child: ListTile(
+                    leading: Icon(
+                      i == 0
+                          ? LucideIcons.checkCircle
+                          : LucideIcons.alertTriangle,
+                      color: i == 0
+                          ? Theme.of(context).colorScheme.secondary
+                          : Theme.of(context).colorScheme.error,
+                    ),
+                    title: Text(demoDetectionTitles[i]),
+                    subtitle: Text(
+                      formatConfidence(
+                            demoDetectionSamples[i].confidenceScore,
+                          ) +
+                          (demoDetectionSamples[i].allergens?.isNotEmpty ==
+                                  true
+                              ? ' • ${demoDetectionSamples[i].allergens!.first.name}'
+                              : ' • Tanpa alergen'),
+                    ),
+                    onTap: () {
+                      HapticFeedback.lightImpact();
+                      Navigator.pop(sheetContext);
+                      context.read<DetectionProvider>().detectDemo(i);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const DetectionResultPage(),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -59,6 +146,17 @@ class _DetectionPageState extends State<DetectionPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Deteksi Alergen'),
+        actions: [
+          Semantics(
+            button: true,
+            label: 'Buka panduan penggunaan',
+            child: IconButton(
+              icon: const Icon(Icons.help_outline),
+              tooltip: 'Panduan',
+              onPressed: _openTour,
+            ),
+          ),
+        ],
       ),
       body: Consumer<DetectionProvider>(
         builder: (context, provider, _) {
@@ -73,21 +171,13 @@ class _DetectionPageState extends State<DetectionPage> {
                     color: colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-                if (!isLoggedIn) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    provider.quotaRemaining != null
-                        ? 'Tanpa masuk, deteksi hanya bisa ${provider.quotaLimit}x per jam (sisa ${provider.quotaRemaining}x).'
-                        : 'Tanpa masuk, deteksi hanya bisa 5x per jam.',
-                    style: textTheme.bodySmall,
-                  ),
-                ],
                 const SizedBox(height: 16),
                 Row(
                   children: [
                     Text('Model: ', style: textTheme.bodyMedium),
                     const SizedBox(width: 8),
                     DropdownButton<String>(
+                      key: TourKeys.modelDropdownKey,
                       value: provider.selectedModel,
                       items: [
                         DropdownMenuItem(
@@ -104,14 +194,30 @@ class _DetectionPageState extends State<DetectionPage> {
                         if (v != null) provider.setModel(v);
                       },
                     ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () =>
-                          setState(() => _isTextMode = !_isTextMode),
-                      child:
-                          Text(_isTextMode ? 'Mode Gambar' : 'Mode Teks'),
-                    ),
                   ],
+                ),
+                Container(
+                  key: TourKeys.modeToggleQuotaKey,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          isLoggedIn
+                              ? 'Masuk sebagai akun terdaftar.'
+                              : (provider.quotaRemaining != null
+                                  ? 'Tanpa masuk, deteksi hanya bisa ${provider.quotaLimit}x per jam (sisa ${provider.quotaRemaining}x).'
+                                  : 'Tanpa masuk, deteksi hanya bisa 5x per jam.'),
+                          style: textTheme.bodySmall,
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () =>
+                            setState(() => _isTextMode = !_isTextMode),
+                        child:
+                            Text(_isTextMode ? 'Mode Gambar' : 'Mode Teks'),
+                      ),
+                    ],
+                  ),
                 ),
                 const SizedBox(height: 8),
                 if (_isTextMode) ...[
@@ -125,14 +231,53 @@ class _DetectionPageState extends State<DetectionPage> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton.icon(
-                      onPressed: provider.isProcessing
-                          ? null
-                          : () async {
-                              await provider.detectFromText(_textCtrl.text);
+                  Container(
+                    key: TourKeys.detectButtonKey,
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: provider.isProcessing
+                            ? null
+                            : () async {
+                                await provider.detectFromText(_textCtrl.text);
+                                if (context.mounted &&
+                                    provider.result != null) {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const DetectionResultPage(),
+                                    ),
+                                  );
+                                }
+                              },
+                        icon: const Icon(LucideIcons.search),
+                        label: const Text('Deteksi Teks'),
+                      ),
+                    ),
+                  ),
+                ] else if (provider.selectedImage != null) ...[
+                  ImagePreviewWidget(
+                    image: provider.selectedImage!,
+                    onRemove: () => provider.clearResult(),
+                  ),
+                  const SizedBox(height: 24),
+                  if (provider.isProcessing)
+                    Container(
+                      key: TourKeys.processingBoxKey,
+                      child: const ProcessingIndicator(),
+                    )
+                  else
+                    Semantics(
+                      button: true,
+                      child: Container(
+                        key: TourKeys.detectButtonKey,
+                        child: SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: ElevatedButton.icon(
+                            onPressed: () async {
+                              await provider.detectAllergens();
                               if (context.mounted &&
                                   provider.result != null) {
                                 Navigator.of(context).push(
@@ -143,44 +288,35 @@ class _DetectionPageState extends State<DetectionPage> {
                                 );
                               }
                             },
-                      icon: const Icon(LucideIcons.search),
-                      label: const Text('Deteksi Teks'),
-                    ),
-                  ),
-                ] else if (provider.selectedImage != null) ...[
-                  ImagePreviewWidget(
-                    image: provider.selectedImage!,
-                    onRemove: () => provider.clearResult(),
-                  ),
-                  const SizedBox(height: 24),
-                  if (provider.isProcessing)
-                    const ProcessingIndicator()
-                  else
-                    Semantics(
-                      button: true,
-                      child: SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton.icon(
-                          onPressed: () async {
-                            await provider.detectAllergens();
-                            if (context.mounted &&
-                                provider.result != null) {
-                              Navigator.of(context).push(
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      const DetectionResultPage(),
-                                ),
-                              );
-                            }
-                          },
-                          icon: const Icon(LucideIcons.search),
-                          label: const Text('Deteksi Alergen'),
+                            icon: const Icon(LucideIcons.search),
+                            label: const Text('Deteksi Alergen'),
+                          ),
                         ),
                       ),
                     ),
-                ] else
-                  _buildUploadArea(context, provider),
+                ] else ...[
+                  Container(
+                    key: TourKeys.uploadAreaKey,
+                    child: _buildUploadArea(context, provider),
+                  ),
+                  if (provider.isProcessing)
+                    Container(
+                      key: TourKeys.processingBoxKey,
+                      child: const ProcessingIndicator(),
+                    ),
+                  Center(
+                    child: Semantics(
+                      button: true,
+                      label: 'Coba tanpa foto',
+                      hint:
+                          'Ketuk dua kali untuk mencoba dengan contoh latihan',
+                      child: TextButton(
+                        onPressed: _showDemoSheet,
+                        child: const Text('Coba tanpa foto'),
+                      ),
+                    ),
+                  ),
+                ],
                 if (provider.error != null) ...[
                   const SizedBox(height: 16),
                   Container(

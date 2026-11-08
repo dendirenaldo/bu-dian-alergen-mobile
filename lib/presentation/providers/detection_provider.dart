@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/entities/detection_entity.dart';
+import '../../data/demo_detection_samples.dart';
 import '../../data/repositories/detection_repository_impl.dart';
 import '../../core/constants/detection_models.dart';
 import '../../services/connectivity_service.dart';
@@ -18,6 +19,7 @@ class DetectionProvider extends ChangeNotifier {
   String _selectedModel = DetectionModels.def;
   int? _quotaRemaining;
   int _quotaLimit = 5;
+  bool _isDemo = false;
 
   File? get selectedImage => _selectedImage;
   DetectionEntity? get result => _result;
@@ -26,6 +28,7 @@ class DetectionProvider extends ChangeNotifier {
   String get selectedModel => _selectedModel;
   int? get quotaRemaining => _quotaRemaining;
   int get quotaLimit => _quotaLimit;
+  bool get isDemo => _isDemo;
 
   void setModel(String m) {
     final v = DetectionModels.sanitize(m);
@@ -83,6 +86,7 @@ class DetectionProvider extends ChangeNotifier {
 
     _isProcessing = true;
     _error = null;
+    _isDemo = false;
     notifyListeners();
 
     final result = await _repository.detectAllergens(_selectedImage!, model: _selectedModel);
@@ -120,6 +124,7 @@ class DetectionProvider extends ChangeNotifier {
     }
     _isProcessing = true;
     _error = null;
+    _isDemo = false;
     notifyListeners();
     final result = await _repository.detectFromText(query, model: _selectedModel);
     if (result.isSuccess) {
@@ -137,6 +142,22 @@ class DetectionProvider extends ChangeNotifier {
     _selectedImage = null;
     _result = null;
     _error = null;
+    _isDemo = false;
+    notifyListeners();
+  }
+
+  /// Mengisi [_result] dari contoh lokal tanpa jaringan.
+  ///
+  /// Sengaja tidak memanggil repository, HTTP, maupun refreshQuota
+  /// agar kuota tidak berkurang dan riwayat tidak tertulis.
+  void detectDemo(int index) {
+    if (_isProcessing) return;
+    if (index < 0 || index >= demoDetectionSamples.length) return;
+    _selectedImage = null;
+    _result = demoDetectionSamples[index];
+    _error = null;
+    _isProcessing = false;
+    _isDemo = true;
     notifyListeners();
   }
 }

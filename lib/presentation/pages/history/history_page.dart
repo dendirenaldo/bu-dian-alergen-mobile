@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../config/routes.dart';
+import '../../../core/tour/guided_tour_service.dart';
+import '../../../core/tour/tour_keys.dart';
 import '../../../core/utils/auth_token.dart';
 import '../../../core/widgets/skeleton/history_list_skeleton.dart';
 import '../../providers/history_provider.dart';
@@ -118,6 +120,18 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         title: const Text('Riwayat'),
         actions: [
+          Semantics(
+            button: true,
+            label: 'Buka panduan penggunaan',
+            child: IconButton(
+              icon: const Icon(LucideIcons.helpCircle),
+              tooltip: 'Panduan',
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                GuidedTourService.showTour(context);
+              },
+            ),
+          ),
           IconButton(
             icon: const Icon(LucideIcons.listFilter),
             onPressed: () {
@@ -255,15 +269,25 @@ class _HistoryPageState extends State<HistoryPage> {
                       }
 
                       final item = items[index];
+                      final card = HistoryItemCard(
+                        title: item.result,
+                        method: item.detectionMethod,
+                        confidence: item.confidenceScore,
+                        createdAt: item.createdAt,
+                        allergenCount: item.allergens?.length ?? 0,
+                      );
+                      if (index == 0) {
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Container(
+                            key: TourKeys.historyCardKey,
+                            child: card,
+                          ),
+                        );
+                      }
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: HistoryItemCard(
-                          title: item.result,
-                          method: item.detectionMethod,
-                          confidence: item.confidenceScore,
-                          createdAt: item.createdAt,
-                          allergenCount: item.allergens?.length ?? 0,
-                        ),
+                        child: card,
                       );
                     },
                   );
