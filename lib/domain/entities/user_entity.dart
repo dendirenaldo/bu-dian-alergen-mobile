@@ -6,6 +6,7 @@ class UserEntity {
   final String? avatarUrl;
   final String role;
   final DateTime createdAt;
+  final bool emailVerified;
 
   UserEntity({
     required this.id,
@@ -15,5 +16,6 @@ class UserEntity {
     this.avatarUrl,
     required this.role,
     required this.createdAt,
+    this.emailVerified = false,
   });
 }

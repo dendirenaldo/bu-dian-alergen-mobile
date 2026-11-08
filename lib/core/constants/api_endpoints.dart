@@ -5,6 +5,8 @@ class ApiEndpoints {
   static const String changePassword = '/api/v1/auth/change-password';
   static const String forgotPassword = '/api/v1/auth/forgot-password';
   static const String resetPassword = '/api/v1/auth/reset-password';
+  static const String verifyEmail = '/api/v1/auth/verify-email';
+  static const String resendVerification = '/api/v1/auth/resend-verification';
 
   static const String detect = '/api/v1/detections/upload';
   static const String detectText = '/api/v1/detections/text';

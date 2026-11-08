@@ -12,6 +12,8 @@ abstract class AuthRepository {
     required String token,
     required String newPassword,
   });
+  Future<Result<String>> verifyEmail(String token);
+  Future<Result<String>> resendVerification(String email);
   Future<Result<void>> changePassword({
     required String currentPassword,
     required String newPassword,

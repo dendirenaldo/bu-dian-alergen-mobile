@@ -14,7 +14,12 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<UserEntity>> login(String email, String password) async {
     try {
       final response = await _dataSource.login(email, password);
-      await _dataSource.saveToken(response.token);
+      // Backend menolak login bila email belum terverifikasi (403
+      // EMAIL_NOT_VERIFIED) sehingga token umumnya selalu ada di sini.
+      // Simpan hanya bila token benar-benar dikembalikan.
+      if (response.token != null && response.token!.isNotEmpty) {
+        await _dataSource.saveToken(response.token!);
+      }
       return Result.success(response.user.toEntity());
     } on ApiException catch (e) {
       return Result.failureFromApi(e.error);
@@ -27,7 +32,11 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Result<UserEntity>> register(String name, String email, String password, {String? phone}) async {
     try {
       final response = await _dataSource.register(name, email, password, phone: phone);
-      await _dataSource.saveToken(response.token);
+      // Register tidak mengembalikan token saat verifikasi email wajib:
+      // jangan menyimpan sesi apa pun agar splash tidak menganggap login.
+      if (response.token != null && response.token!.isNotEmpty) {
+        await _dataSource.saveToken(response.token!);
+      }
       return Result.success(response.user.toEntity());
     } on ApiException catch (e) {
       return Result.failureFromApi(e.error);
@@ -112,6 +121,30 @@ class AuthRepositoryImpl implements AuthRepository {
         newPassword: newPassword,
       );
       return Result.success(null);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Result<String>> verifyEmail(String token) async {
+    try {
+      final message = await _dataSource.verifyEmail(token);
+      return Result.success(message);
+    } on ApiException catch (e) {
+      return Result.failureFromApi(e.error);
+    } catch (e) {
+      return Result.failure(e.toString().replaceFirst('Exception: ', ''));
+    }
+  }
+
+  @override
+  Future<Result<String>> resendVerification(String email) async {
+    try {
+      final message = await _dataSource.resendVerification(email);
+      return Result.success(message);
     } on ApiException catch (e) {
       return Result.failureFromApi(e.error);
     } catch (e) {

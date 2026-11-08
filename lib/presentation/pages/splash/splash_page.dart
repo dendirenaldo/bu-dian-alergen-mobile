@@ -52,6 +52,18 @@ class _SplashPageState extends State<SplashPage> {
 
     if (authProvider.isAuthenticated) {
       Navigator.pushReplacementNamed(context, AppRoutes.main);
+    } else if (authProvider.pendingEmail != null ||
+        authProvider.isEmailNotVerified) {
+      // Sesi ditolak karena belum verifikasi (checkAuth membersihkan token).
+      // Arahkan ke halaman verifikasi dengan email pending.
+      Navigator.pushReplacementNamed(
+        context,
+        AppRoutes.verifyEmail,
+        arguments: <String, dynamic>{
+          if (authProvider.pendingEmail != null)
+            'email': authProvider.pendingEmail,
+        },
+      );
     } else if (!onboardingComplete) {
       Navigator.pushReplacementNamed(context, AppRoutes.onboarding);
     } else {

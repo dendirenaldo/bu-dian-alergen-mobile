@@ -13,6 +13,7 @@ import '../presentation/pages/profile/edit_profile_page.dart';
 import '../presentation/pages/profile/settings_page.dart';
 import '../presentation/pages/auth/forgot_password_page.dart';
 import '../presentation/pages/auth/reset_password_page.dart';
+import '../presentation/pages/auth/verify_email_page.dart';
 import '../presentation/pages/profile/change_password_page.dart';
 import '../presentation/pages/profile/terms_page.dart';
 import '../presentation/pages/profile/privacy_page.dart';
@@ -24,6 +25,8 @@ class AppRoutes {
   static const String register = '/register';
   static const String forgotPassword = '/forgot-password';
   static const String resetPassword = '/reset-password';
+  static const String verifyEmail = '/verify-email';
+  static const String checkEmail = '/check-email';
   static const String main = '/main';
   static const String detect = '/detect';
   static const String detectionResult = '/detection-result';
@@ -61,6 +64,21 @@ class AppRoutes {
           return ResetPasswordPage(token: token);
         },
         changePassword: (context) => const ChangePasswordPage(),
+        verifyEmail: (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final token = args?['token'] as String?;
+          final email = args?['email'] as String?;
+          return VerifyEmailPage(token: token, email: email);
+        },
+        // Alias untuk kompatibilitas: sama dengan verify-email.
+        checkEmail: (context) {
+          final args =
+              ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+          final token = args?['token'] as String?;
+          final email = args?['email'] as String?;
+          return VerifyEmailPage(token: token, email: email);
+        },
         terms: (context) => const TermsPage(),
         privacy: (context) => const PrivacyPage(),
       };

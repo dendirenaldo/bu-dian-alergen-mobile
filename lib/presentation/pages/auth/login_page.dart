@@ -50,8 +50,9 @@ class _LoginPageState extends State<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
+    final email = _emailController.text.trim();
     await auth.login(
-      _emailController.text.trim(),
+      email,
       _passwordController.text,
     );
 
@@ -63,6 +64,20 @@ class _LoginPageState extends State<LoginPage> {
         AppRoutes.main,
         (route) => false,
       );
+    } else if (auth.isEmailNotVerified) {
+      // Email belum diverifikasi: tampilkan banner + aksi kirim ulang.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(auth.error ?? 'Email belum diverifikasi'),
+          backgroundColor: Theme.of(context).colorScheme.error,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: 'Kirim ulang',
+            textColor: Theme.of(context).colorScheme.onError,
+            onPressed: () => _handleResend(email),
+          ),
+        ),
+      );
     } else if (auth.error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -73,6 +88,38 @@ class _LoginPageState extends State<LoginPage> {
             textColor: Theme.of(context).colorScheme.onError,
             onPressed: _handleLogin,
           ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _handleResend(String email) async {
+    final auth = context.read<AuthProvider>();
+    final result = await auth.resendVerification(email);
+    if (!mounted) return;
+    if (result.isSuccess) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.data ?? 'Tautan verifikasi telah dikirim'),
+          backgroundColor: Theme.of(context).colorScheme.secondary,
+          action: SnackBarAction(
+            label: 'Verifikasi',
+            textColor: Theme.of(context).colorScheme.onSecondary,
+            onPressed: () {
+              Navigator.pushNamed(
+                context,
+                AppRoutes.verifyEmail,
+                arguments: <String, dynamic>{'email': email},
+              );
+            },
+          ),
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result.error ?? auth.error ?? 'Gagal mengirim ulang'),
+          backgroundColor: Theme.of(context).colorScheme.error,
         ),
       );
     }
@@ -127,6 +174,48 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
+                Consumer<AuthProvider>(
+                  builder: (context, auth, _) {
+                    if (!auth.isEmailNotVerified) return const SizedBox.shrink();
+                    final pending = auth.pendingEmail ?? _emailController.text.trim();
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .tertiary
+                            .withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.mark_email_unread_outlined,
+                            color: Theme.of(context).colorScheme.tertiary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Email belum diverifikasi. Cek inbox atau kirim ulang tautan.',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Theme.of(context).colorScheme.onSurface,
+                              ),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: auth.isLoading
+                                ? null
+                                : () => _handleResend(pending),
+                            child: const Text('Kirim ulang'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
                 Consumer<AuthProvider>(
                   builder: (context, auth, _) {
                     final err = auth.error;

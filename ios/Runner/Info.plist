@@ -50,7 +50,23 @@
 	     sistem memakai teks di bawah ini. -->
 	<key>NSCameraUsageDescription</key>
 	<string>Aplikasi membutuhkan akses kamera untuk memotret label komposisi makanan yang akan dideteksi alergennya.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Aplikasi membutuhkan akses galeri untuk memilih foto label komposisi makanan yang akan dideteksi alergennya.</string>
-</dict>
-</plist>
+ 	<key>NSPhotoLibraryUsageDescription</key>
+ 	<string>Aplikasi membutuhkan akses galeri untuk memilih foto label komposisi makanan yang akan dideteksi alergennya.</string>
+ 	<!-- Custom URL scheme untuk deep link verifikasi email & reset password:
+ 	     budian://verify-email?token=... / budian://reset-password?token=...
+ 	     (lihat APP_MOBILE_SCHEME di backend .env.example). -->
+ 	<key>CFBundleURLTypes</key>
+ 	<array>
+ 		<dict>
+ 			<key>CFBundleTypeRole</key>
+ 			<string>Editor</string>
+ 			<key>CFBundleURLName</key>
+ 			<string>budian</string>
+ 			<key>CFBundleURLSchemes</key>
+ 			<array>
+ 				<string>budian</string>
+ 			</array>
+ 		</dict>
+ 	</array>
+ </dict>
+ </plist>

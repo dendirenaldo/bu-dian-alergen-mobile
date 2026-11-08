@@ -240,4 +240,74 @@ class AuthRemoteDataSource {
       throw ApiException(transportError(e, fallback: 'Gagal mereset password'));
     }
   }
+
+  Future<String> verifyEmail(String token) async {
+    try {
+      final uri = Uri.parse(AppConfig.join(ApiEndpoints.verifyEmail));
+      final response = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode({'token': token.trim()}),
+          )
+          .timeout(AppConfig.timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['message'] != null) {
+            return '${body['message']}';
+          }
+          final data = body is Map ? body['data'] : null;
+          if (data is Map && data['message'] != null) {
+            return '${data['message']}';
+          }
+        } catch (_) {}
+        return 'Email berhasil diverifikasi';
+      }
+      throw ApiException(parseApiError(response, 'Gagal memverifikasi email'));
+    } on ApiException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      throw ApiException(transportError(e, fallback: 'Gagal memverifikasi email'));
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(transportError(e, fallback: 'Gagal memverifikasi email'));
+    }
+  }
+
+  Future<String> resendVerification(String email) async {
+    try {
+      final uri = Uri.parse(AppConfig.join(ApiEndpoints.resendVerification));
+      final response = await _client
+          .post(
+            uri,
+            headers: const {'Content-Type': 'application/json', 'Accept': 'application/json'},
+            body: jsonEncode({'email': email.trim()}),
+          )
+          .timeout(AppConfig.timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        try {
+          final body = jsonDecode(response.body);
+          if (body is Map && body['message'] != null) {
+            return '${body['message']}';
+          }
+          final data = body is Map ? body['data'] : null;
+          if (data is Map && data['message'] != null) {
+            return '${data['message']}';
+          }
+        } catch (_) {}
+        return 'Jika email terdaftar dan belum terverifikasi, tautan verifikasi telah dikirim';
+      }
+      throw ApiException(parseApiError(response, 'Gagal mengirim ulang verifikasi'));
+    } on ApiException {
+      rethrow;
+    } on TimeoutException catch (e) {
+      throw ApiException(transportError(e, fallback: 'Gagal mengirim ulang verifikasi'));
+    } catch (e) {
+      if (e is ApiException) rethrow;
+      throw ApiException(transportError(e, fallback: 'Gagal mengirim ulang verifikasi'));
+    }
+  }
 }

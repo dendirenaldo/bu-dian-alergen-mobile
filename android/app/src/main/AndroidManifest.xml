@@ -39,6 +39,26 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Deep link verifikasi email & reset password.
+                 Universal link https (App Links) + custom scheme budian:// .
+                 Host mencakup domain produksi (lihat AppConfig.baseUrl /
+                 NEXT_PUBLIC_API_URL web) + placeholder bila FRONTEND_URL
+                 backend belum diisi domain. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="researchcomnets.ilkom.unsri.ac.id" android:pathPrefix="/verify-email"/>
+                <data android:scheme="https" android:host="researchcomnets.ilkom.unsri.ac.id" android:pathPrefix="/reset-password"/>
+                <data android:scheme="https" android:host="researchcomnets.unsri.ac.id" android:pathPrefix="/verify-email"/>
+                <data android:scheme="https" android:host="researchcomnets.unsri.ac.id" android:pathPrefix="/reset-password"/>
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="budian"/>
+            </intent-filter>
         </activity>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->

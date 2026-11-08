@@ -18,6 +18,7 @@ class AuthProvider extends ChangeNotifier {
   String? _errorCode;
   Map<String, String> _fieldErrors = const {};
   String? _successMessage;
+  String? _pendingEmail;
   bool _disposed = false;
 
   /// Optional hook invoked after a 401 session invalidation.
@@ -34,7 +35,9 @@ class AuthProvider extends ChangeNotifier {
   String? get errorCode => _errorCode;
   Map<String, String> get fieldErrors => _fieldErrors;
   bool get isSessionExpired => _errorStatusCode == 401;
+  bool get isEmailNotVerified => _errorCode == 'EMAIL_NOT_VERIFIED';
   String? get successMessage => _successMessage;
+  String? get pendingEmail => _pendingEmail;
 
   void _notifyIfChanged(bool changed) {
     if (changed && !_disposed) notifyListeners();
@@ -109,6 +112,13 @@ class AuthProvider extends ChangeNotifier {
         _user = result.data;
         after = true;
       }
+      // Login sukses berarti email sudah terverifikasi (backend 403 bila
+      // belum). Bersihkan penanda pending untuk email yang sama.
+      if (_pendingEmail != null &&
+          _pendingEmail!.toLowerCase() == email.trim().toLowerCase()) {
+        _pendingEmail = null;
+        after = true;
+      }
     } else {
       after = _setError(
             result.error,
@@ -117,6 +127,13 @@ class AuthProvider extends ChangeNotifier {
             fieldErrors: result.fieldErrors,
           ) ||
           after;
+      if (result.code == 'EMAIL_NOT_VERIFIED') {
+        // Pertahankan email agar halaman login bisa menawarkan kirim ulang.
+        if (_pendingEmail != email.trim()) {
+          _pendingEmail = email.trim();
+          after = true;
+        }
+      }
       if (result.isUnauthenticated) _handleUnauthenticated();
     }
     after = _setLoading(false) || after;
@@ -134,9 +151,31 @@ class AuthProvider extends ChangeNotifier {
 
     var after = false;
     if (result.isSuccess) {
-      if (_user != result.data) {
-        _user = result.data;
-        after = true;
+      final registered = result.data;
+      if (registered != null && !registered.emailVerified) {
+        // Wajib verifikasi: jangan anggap login. Simpan email pending agar
+        // splash/halaman verifikasi tahu ke mana harus kirim ulang.
+        if (_user != null) {
+          _user = null;
+          after = true;
+        }
+        if (_pendingEmail != registered.email) {
+          _pendingEmail = registered.email;
+          after = true;
+        }
+        after = _setSuccess(
+              'Registrasi berhasil. Cek email untuk verifikasi.',
+            ) ||
+            after;
+      } else {
+        if (_user != registered) {
+          _user = registered;
+          after = true;
+        }
+        if (_pendingEmail != null) {
+          _pendingEmail = null;
+          after = true;
+        }
       }
     } else {
       after = _setError(
@@ -209,6 +248,67 @@ class AuthProvider extends ChangeNotifier {
     return result;
   }
 
+  Future<Result<String>> verifyEmail(String token) async {
+    var changed = _setLoading(true);
+    changed = _setError(null) || changed;
+    changed = _setSuccess(null) || changed;
+    _notifyIfChanged(changed);
+
+    final result = await _repository.verifyEmail(token);
+    if (_disposed) return result;
+
+    var after = false;
+    if (result.isSuccess) {
+      after = _setSuccess(result.data) || after;
+      // Token valid → akun siap login; hapus penanda pending bila ada.
+      if (_pendingEmail != null) {
+        _pendingEmail = null;
+        after = true;
+      }
+    } else {
+      after = _setError(
+            result.error,
+            statusCode: result.statusCode,
+            code: result.code,
+            fieldErrors: result.fieldErrors,
+          ) ||
+          after;
+    }
+    after = _setLoading(false) || after;
+    _notifyIfChanged(after);
+    return result;
+  }
+
+  Future<Result<String>> resendVerification(String email) async {
+    var changed = _setLoading(true);
+    changed = _setError(null) || changed;
+    changed = _setSuccess(null) || changed;
+    _notifyIfChanged(changed);
+
+    final result = await _repository.resendVerification(email);
+    if (_disposed) return result;
+
+    var after = false;
+    if (result.isSuccess) {
+      after = _setSuccess(result.data) || after;
+      if (_pendingEmail != email.trim()) {
+        _pendingEmail = email.trim();
+        after = true;
+      }
+    } else {
+      after = _setError(
+            result.error,
+            statusCode: result.statusCode,
+            code: result.code,
+            fieldErrors: result.fieldErrors,
+          ) ||
+          after;
+    }
+    after = _setLoading(false) || after;
+    _notifyIfChanged(after);
+    return result;
+  }
+
   Future<Result<void>> changePassword({
     required String currentPassword,
     required String newPassword,
@@ -254,18 +354,33 @@ class AuthProvider extends ChangeNotifier {
       _user = null;
       changed = true;
     }
+    if (_pendingEmail != null) {
+      _pendingEmail = null;
+      changed = true;
+    }
     changed = _setError(null) || changed;
     changed = _setSuccess(null) || changed;
     changed = _setLoading(false) || changed;
     _notifyIfChanged(changed);
   }
 
+  void setPendingEmail(String? email) {
+    final normalized = email?.trim().isEmpty ?? true ? null : email!.trim();
+    if (_pendingEmail == normalized) return;
+    _pendingEmail = normalized;
+    if (!_disposed) notifyListeners();
+  }
+
+  void clearPendingEmail() => setPendingEmail(null);
+
   /// Single-notify auth check: computes the end state first, then
   /// notifies at most once. 401 is detected via [Result.statusCode],
-  /// never via string matching.
+  /// never via string matching. Akun yang belum verifikasi email juga
+  /// ditolak (tidak dianggap login) agar splash tidak lolos ke main.
   Future<void> checkAuth() async {
     final wasLoading = _isLoading;
     final hadUser = _user != null;
+    final hadPending = _pendingEmail;
     _isLoading = true;
 
     final tokenResult = await _repository.getToken();
@@ -280,20 +395,55 @@ class AuthProvider extends ChangeNotifier {
     final result = await _repository.getCurrentUser();
     if (_disposed) return;
     if (result.isSuccess) {
-      final userChanged = _user?.id != result.data?.id;
-      _user = result.data;
+      final fetched = result.data;
+      // Tolak sesi yang emailnya belum terverifikasi.
+      if (fetched != null && !fetched.emailVerified) {
+        try {
+          await _repository.clearStoredToken();
+        } catch (_) {}
+        _user = null;
+        _isLoading = false;
+        var changed = hadUser || wasLoading;
+        if (_pendingEmail != fetched.email) {
+          _pendingEmail = fetched.email;
+          changed = true;
+        }
+        changed = _setError(
+              'Email belum diverifikasi. Silakan verifikasi email Anda.',
+              statusCode: 403,
+              code: 'EMAIL_NOT_VERIFIED',
+            ) ||
+            changed;
+        _notifyIfChanged(changed);
+        return;
+      }
+      final userChanged = _user?.id != fetched?.id;
+      _user = fetched;
       _isLoading = false;
       var changed = userChanged || wasLoading;
       changed = _setError(null) || changed;
+      // Akun terverifikasi: bersihkan penanda pending yang usang.
+      if (hadPending != null) {
+        _pendingEmail = null;
+        changed = true;
+      }
       _notifyIfChanged(changed);
-    } else if (result.isUnauthenticated) {
+    } else if (result.isUnauthenticated || result.code == 'EMAIL_NOT_VERIFIED') {
       try {
         await _repository.clearStoredToken();
       } catch (_) {}
       _user = null;
       _isLoading = false;
       var changed = hadUser || wasLoading;
-      changed = _setError(null) || changed;
+      changed = _setError(
+            result.code == 'EMAIL_NOT_VERIFIED'
+                ? 'Email belum diverifikasi. Silakan verifikasi email Anda.'
+                : null,
+            statusCode: result.statusCode,
+            code: result.code,
+            fieldErrors: result.fieldErrors,
+          ) ||
+          changed;
       _notifyIfChanged(changed);
     } else {
       // Non-401 failure (e.g. offline): single notify, keep signed out

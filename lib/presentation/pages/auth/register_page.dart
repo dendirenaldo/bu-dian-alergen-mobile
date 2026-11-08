@@ -31,13 +31,44 @@ class _RegisterPageState extends State<RegisterPage> {
     if (!_formKey.currentState!.validate()) return;
 
     final auth = context.read<AuthProvider>();
+    final email = _emailController.text.trim();
     await auth.register(
       _nameController.text.trim(),
-      _emailController.text.trim(),
+      email,
       _passwordController.text,
     );
 
     if (!mounted) return;
+
+    // Akun baru wajib verifikasi: user tidak dianggap login (isAuthenticated
+    // tetap false, pendingEmail terisi). Tampilkan dialog lalu ke /verify-email.
+    if (!auth.isAuthenticated && auth.pendingEmail != null) {
+      final pending = auth.pendingEmail!;
+      await showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Text('Cek Email Anda'),
+          content: Text(
+            'Registrasi berhasil. Kami mengirim tautan verifikasi ke $pending. '
+            'Buka tautan dari email atau masukkan token di halaman berikutnya.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+      if (!mounted) return;
+      Navigator.pushNamed(
+        context,
+        AppRoutes.verifyEmail,
+        arguments: <String, dynamic>{'email': pending},
+      );
+      return;
+    }
 
     if (auth.isAuthenticated) {
       Navigator.pushNamedAndRemoveUntil(
