@@ -78,23 +78,20 @@ class DetectionResultPage extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: const Color(0xFFFEF3C7),
                         borderRadius: BorderRadius.circular(8),
-                        border: Border.all(
-                          color: const Color(0xFFF59E0B),
-                        ),
                       ),
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(
+                          const Icon(
                             LucideIcons.info,
                             size: 20,
                             color: Color(0xFF92400E),
                           ),
-                          SizedBox(width: 8),
+                          const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               'Mode Latihan — tidak disimpan ke Riwayat',
-                              style: TextStyle(
-                                color: Color(0xFF92400E),
+                              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                                color: const Color(0xFF92400E),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),

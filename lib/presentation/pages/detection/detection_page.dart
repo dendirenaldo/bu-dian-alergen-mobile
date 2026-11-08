@@ -248,18 +248,17 @@ class _DetectionPageState extends State<DetectionPage> {
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF3C7),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFF59E0B)),
                     ),
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(LucideIcons.alertTriangle,
+                        const Icon(LucideIcons.alertTriangle,
                             size: 20, color: Color(0xFF92400E)),
-                        SizedBox(width: 8),
+                        const SizedBox(width: 8),
                         Expanded(
                           child: Text(
                             'Foto kurang jelas, coba foto ulang tegak/fokus',
-                            style: TextStyle(
-                              color: Color(0xFF92400E),
+                            style: textTheme.labelLarge?.copyWith(
+                              color: const Color(0xFF92400E),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -276,8 +275,6 @@ class _DetectionPageState extends State<DetectionPage> {
                     decoration: BoxDecoration(
                       color: colorScheme.primary.withValues(alpha: 0.08),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: colorScheme.primary.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
