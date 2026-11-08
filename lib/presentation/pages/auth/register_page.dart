@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../config/routes.dart';
 import '../../providers/auth_provider.dart';
@@ -29,6 +30,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) return;
+    HapticFeedback.lightImpact();
 
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim();

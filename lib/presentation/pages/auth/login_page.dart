@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../config/routes.dart';
 import '../../../services/storage_service.dart';
@@ -48,6 +49,7 @@ class _LoginPageState extends State<LoginPage> {
 
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
+    HapticFeedback.lightImpact();
 
     final auth = context.read<AuthProvider>();
     final email = _emailController.text.trim();
